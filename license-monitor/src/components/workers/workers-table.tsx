@@ -45,6 +45,7 @@ export function WorkersTable({ workers }: WorkersTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">#</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Position</TableHead>
               <TableHead>Phone</TableHead>
@@ -57,17 +58,18 @@ export function WorkersTable({ workers }: WorkersTableProps) {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="text-center text-muted-foreground py-8"
                 >
                   No workers found
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((worker) => {
+              filtered.map((worker, index) => {
                 const worstStatus = getWorstStatus(worker.licenses);
                 return (
                   <TableRow key={worker.id} className="hover:bg-accent/50 transition-colors">
+                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                     <TableCell>
                       <Link
                         href={`/workers/${worker.id}`}
@@ -86,9 +88,9 @@ export function WorkersTable({ workers }: WorkersTableProps) {
                           {worstStatus.label}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">
+                        <Badge className="!bg-black !text-white">
                           No licenses
-                        </span>
+                        </Badge>
                       )}
                     </TableCell>
                   </TableRow>

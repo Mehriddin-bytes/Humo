@@ -1,4 +1,4 @@
-export type LicenseStatus = "expired" | "critical" | "warning" | "caution" | "valid" | "replaced";
+export type LicenseStatus = "expired" | "critical" | "warning" | "caution" | "valid" | "replaced" | "not_assigned";
 
 export interface LicenseStatusInfo {
   status: LicenseStatus;
@@ -39,6 +39,19 @@ export interface LicenseWithType {
 }
 
 export interface LicenseWithWorker extends LicenseWithType {
+  worker: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    position: string | null;
+  };
+}
+
+export interface MissingLicenseEntry {
+  licenseTypeId: string;
+  licenseTypeName: string;
   worker: {
     id: string;
     firstName: string;

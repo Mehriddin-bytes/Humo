@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { LicensesTable } from "@/components/licenses/licenses-table";
+import { RequiredLicenseTypesChecklist } from "@/components/workers/required-license-types-checklist";
 import { DeleteWorkerButton } from "./delete-worker-button";
 
 export default async function WorkerDetailPage({
@@ -14,17 +15,32 @@ export default async function WorkerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const worker = await prisma.worker.findUnique({
-    where: { id },
-    include: {
-      licenses: {
-        include: { licenseType: true },
-        orderBy: { expiryDate: "asc" },
+  const [worker, allLicenseTypes] = await Promise.all([
+    prisma.worker.findUnique({
+      where: { id },
+      include: {
+        licenses: {
+          include: { licenseType: true },
+          orderBy: { expiryDate: "asc" },
+        },
+        requiredLicenseTypes: { select: { licenseTypeId: true } },
       },
-    },
-  });
+    }),
+    prisma.licenseType.findMany({ orderBy: { name: "asc" } }),
+  ]);
 
   if (!worker) notFound();
+
+  const currentRequired = worker.requiredLicenseTypes.map(
+    (r) => r.licenseTypeId
+  );
+  const activeLicenseTypeIds = [
+    ...new Set(
+      worker.licenses
+        .filter((l) => l.status === "active")
+        .map((l) => l.licenseTypeId)
+    ),
+  ];
 
   return (
     <div className="space-y-8">
@@ -63,6 +79,20 @@ export default async function WorkerDetailPage({
               <p className="text-sm text-muted-foreground">{worker.notes}</p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Required License Types</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RequiredLicenseTypesChecklist
+            workerId={worker.id}
+            allLicenseTypes={allLicenseTypes}
+            currentRequired={currentRequired}
+            activeLicenseTypeIds={activeLicenseTypeIds}
+          />
         </CardContent>
       </Card>
 

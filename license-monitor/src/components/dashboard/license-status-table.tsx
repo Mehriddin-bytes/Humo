@@ -43,13 +43,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
 import { getLicenseStatus } from "@/lib/license-status";
-import type { LicenseWithWorker } from "@/types";
+import type { LicenseWithWorker, MissingLicenseEntry } from "@/types";
 
 interface LicenseStatusTableProps {
   licenses: LicenseWithWorker[];
+  missingLicenses?: MissingLicenseEntry[];
 }
 
-export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
+export function LicenseStatusTable({ licenses, missingLicenses = [] }: LicenseStatusTableProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -62,20 +63,21 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Get unique license types for the filter dropdown
-  const licenseTypes = Array.from(
-    new Map(
-      licenses.map((l) => [l.licenseType.id, l.licenseType.name])
-    )
-  ).sort((a, b) => a[1].localeCompare(b[1]));
+  // Get unique license types for the filter dropdown (from both licenses and missing)
+  const licenseTypeMap = new Map<string, string>();
+  for (const l of licenses) licenseTypeMap.set(l.licenseType.id, l.licenseType.name);
+  for (const m of missingLicenses) licenseTypeMap.set(m.licenseTypeId, m.licenseTypeName);
+  const licenseTypes = Array.from(licenseTypeMap).sort((a, b) => a[1].localeCompare(b[1]));
+
+  const q = search.toLowerCase();
 
   const filtered = licenses
     .filter((license) => {
+      if (statusFilter === "not_assigned") return false;
       const workerName =
         `${license.worker.firstName} ${license.worker.lastName}`.toLowerCase();
       const typeName = license.licenseType.name.toLowerCase();
       const code = (license.code || "").toLowerCase();
-      const q = search.toLowerCase();
       return (
         workerName.includes(q) || typeName.includes(q) || code.includes(q)
       );
@@ -98,31 +100,48 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
       return aStatus.daysUntil - bStatus.daysUntil;
     });
 
+  // Filter missing licenses by search and type filter
+  const filteredMissing = missingLicenses.filter((entry) => {
+    if (statusFilter !== "all" && statusFilter !== "not_assigned") return false;
+    if (typeFilter !== "all" && entry.licenseTypeId !== typeFilter) return false;
+    const workerName =
+      `${entry.worker.firstName} ${entry.worker.lastName}`.toLowerCase();
+    const typeName = entry.licenseTypeName.toLowerCase();
+    return workerName.includes(q) || typeName.includes(q);
+  });
+
   // Group filtered licenses by type
   const grouped = new Map<
     string,
-    { name: string; licenses: typeof filtered }
+    { name: string; licenses: typeof filtered; missing: MissingLicenseEntry[] }
   >();
   for (const license of filtered) {
     const key = license.licenseType.id;
     if (!grouped.has(key)) {
-      grouped.set(key, { name: license.licenseType.name, licenses: [] });
+      grouped.set(key, { name: license.licenseType.name, licenses: [], missing: [] });
     }
     grouped.get(key)!.licenses.push(license);
   }
+  for (const entry of filteredMissing) {
+    const key = entry.licenseTypeId;
+    if (!grouped.has(key)) {
+      grouped.set(key, { name: entry.licenseTypeName, licenses: [], missing: [] });
+    }
+    grouped.get(key)!.missing.push(entry);
+  }
 
-  // Sort groups: most urgent first (by worst license in group)
+  // Sort groups: missing-only groups first (worst), then by worst license expiry
   const sortedGroups = Array.from(grouped.entries()).sort((a, b) => {
-    const aWorst = Math.min(
-      ...a[1].licenses.map((l) =>
-        getLicenseStatus(new Date(l.expiryDate)).daysUntil
-      )
-    );
-    const bWorst = Math.min(
-      ...b[1].licenses.map((l) =>
-        getLicenseStatus(new Date(l.expiryDate)).daysUntil
-      )
-    );
+    const aWorst = a[1].missing.length > 0
+      ? -Infinity
+      : a[1].licenses.length > 0
+        ? Math.min(...a[1].licenses.map((l) => getLicenseStatus(new Date(l.expiryDate)).daysUntil))
+        : Infinity;
+    const bWorst = b[1].missing.length > 0
+      ? -Infinity
+      : b[1].licenses.length > 0
+        ? Math.min(...b[1].licenses.map((l) => getLicenseStatus(new Date(l.expiryDate)).daysUntil))
+        : Infinity;
     return aWorst - bWorst;
   });
 
@@ -135,7 +154,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
     });
   }
 
-  function getGroupStats(groupLicenses: typeof filtered) {
+  function getGroupStats(groupLicenses: typeof filtered, missingCount: number) {
     let expired = 0;
     let expiring = 0;
     let valid = 0;
@@ -150,7 +169,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
         expiring++;
       else valid++;
     }
-    return { expired, expiring, valid };
+    return { expired, expiring, valid, missing: missingCount };
   }
 
   async function handleDelete() {
@@ -210,6 +229,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="not_assigned">No License</SelectItem>
             <SelectItem value="expired">Expired</SelectItem>
             <SelectItem value="critical">Critical (30d)</SelectItem>
             <SelectItem value="warning">Warning (60d)</SelectItem>
@@ -219,7 +239,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && filteredMissing.length === 0 ? (
         <div className="rounded-md border py-8 text-center text-muted-foreground">
           No licenses found
         </div>
@@ -227,7 +247,8 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
         <div className="space-y-3">
           {sortedGroups.map(([typeId, group]) => {
             const isCollapsed = collapsedTypes.has(typeId);
-            const stats = getGroupStats(group.licenses);
+            const stats = getGroupStats(group.licenses, group.missing.length);
+            const totalInGroup = group.licenses.length + group.missing.length;
 
             return (
               <div key={typeId} className="rounded-md border overflow-hidden">
@@ -244,7 +265,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
                     )}
                     <span className="font-semibold">{group.name}</span>
                     <span className="text-sm text-muted-foreground">
-                      {group.licenses.length} worker{group.licenses.length !== 1 ? "s" : ""}
+                      {totalInGroup} worker{totalInGroup !== 1 ? "s" : ""}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -256,6 +277,9 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
                     )}
                     {stats.valid > 0 && (
                       <Badge variant="success">{stats.valid} valid</Badge>
+                    )}
+                    {stats.missing > 0 && (
+                      <Badge className="!bg-black !text-white">{stats.missing} no license</Badge>
                     )}
                   </div>
                 </button>
@@ -273,6 +297,47 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
+                      {group.missing.map((entry) => {
+                        const workerName = `${entry.worker.firstName} ${entry.worker.lastName}`;
+                        return (
+                          <TableRow
+                            key={`missing-${entry.worker.id}`}
+                            className="font-semibold"
+                          >
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/workers/${entry.worker.id}`}>
+                                      <User className="mr-2 h-4 w-4" />
+                                      Go to Profile
+                                    </Link>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                            <TableCell>
+                              <Link
+                                href={`/workers/${entry.worker.id}`}
+                                className="font-semibold hover:underline"
+                              >
+                                {workerName}
+                              </Link>
+                            </TableCell>
+                            <TableCell>—</TableCell>
+                            <TableCell>—</TableCell>
+                            <TableCell>—</TableCell>
+                            <TableCell>
+                              <Badge className="!bg-black !text-white">No license</Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {group.licenses.map((license) => {
                         const workerName = `${license.worker.firstName} ${license.worker.lastName}`;
                         return (

@@ -18,7 +18,8 @@ model Worker {
   notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  licenses  License[]
+  licenses             License[]
+  requiredLicenseTypes WorkerRequiredLicenseType[]
 
   @@map("workers")
 }
@@ -28,7 +29,8 @@ model LicenseType {
   name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
-  licenses    License[]
+  licenses          License[]
+  requiredByWorkers WorkerRequiredLicenseType[]
 
   @@map("license_types")
 }
@@ -77,4 +79,16 @@ model AlertLog {
   license    License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
 
   @@map("alert_logs")
+}
+
+model WorkerRequiredLicenseType {
+  id            String      @id @default(cuid())
+  workerId      String
+  licenseTypeId String
+  createdAt     DateTime    @default(now())
+  worker        Worker      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  licenseType   LicenseType @relation(fields: [licenseTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, licenseTypeId])
+  @@map("worker_required_license_types")
 }
