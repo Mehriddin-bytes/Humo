@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Worker {
+  id        String    @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  position  String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  licenses  License[]
+
+  @@map("workers")
+}
+
+model LicenseType {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  licenses    License[]
+
+  @@map("license_types")
+}
+
+model License {
+  id            String      @id @default(cuid())
+  code          String?
+  issueDate     DateTime
+  expiryDate    DateTime
+  status        String      @default("active") // "active" or "replaced"
+  workerId      String
+  licenseTypeId String
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  worker        Worker      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  licenseType   LicenseType @relation(fields: [licenseTypeId], references: [id])
+  alertLogs     AlertLog[]
+
+  @@map("licenses")
+}
+
+model AlertSetting {
+  id             String   @id @default(cuid())
+  emailEnabled   Boolean  @default(false)
+  smsEnabled     Boolean  @default(false)
+  warning90days  Boolean  @default(true)
+  warning60days  Boolean  @default(true)
+  warning30days  Boolean  @default(true)
+  recipientEmail String?
+  recipientPhone String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("alert_settings")
+}
+
+model AlertLog {
+  id         String   @id @default(cuid())
+  licenseId  String
+  alertType  String
+  alertLevel String
+  sentAt     DateTime @default(now())
+  success    Boolean
+  error      String?
+  license    License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@map("alert_logs")
+}
