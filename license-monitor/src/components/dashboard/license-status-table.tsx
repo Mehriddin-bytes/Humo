@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, MoreHorizontal, User, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +23,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
 import { getLicenseStatus } from "@/lib/license-status";
 import type { LicenseWithWorker } from "@/types";
@@ -30,10 +50,17 @@ interface LicenseStatusTableProps {
 }
 
 export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [collapsedTypes, setCollapsedTypes] = useState<Set<string>>(new Set());
+  const [deleteDialog, setDeleteDialog] = useState<{
+    type: "worker" | "license";
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get unique license types for the filter dropdown
   const licenseTypes = Array.from(
@@ -126,6 +153,32 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
     return { expired, expiring, valid };
   }
 
+  async function handleDelete() {
+    if (!deleteDialog) return;
+    setIsDeleting(true);
+    const endpoint =
+      deleteDialog.type === "worker"
+        ? `/api/workers/${deleteDialog.id}`
+        : `/api/licenses/${deleteDialog.id}`;
+    const res = await fetch(endpoint, { method: "DELETE" });
+    if (res.ok) {
+      toast.success(
+        deleteDialog.type === "worker"
+          ? "Worker deleted"
+          : "License removed"
+      );
+      router.refresh();
+    } else {
+      toast.error(
+        deleteDialog.type === "worker"
+          ? "Failed to delete worker"
+          : "Failed to remove license"
+      );
+    }
+    setIsDeleting(false);
+    setDeleteDialog(null);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex gap-4">
@@ -211,6 +264,7 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px]"></TableHead>
                         <TableHead>Worker</TableHead>
                         <TableHead>Code</TableHead>
                         <TableHead>Issue Date</TableHead>
@@ -219,40 +273,85 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {group.licenses.map((license) => (
-                        <TableRow
-                          key={license.id}
-                          className="hover:bg-accent/50 transition-colors"
-                        >
-                          <TableCell>
-                            <Link
-                              href={`/workers/${license.workerId}`}
-                              className="font-medium hover:underline"
-                            >
-                              {license.worker.firstName}{" "}
-                              {license.worker.lastName}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {license.code || "—"}
-                          </TableCell>
-                          <TableCell>
-                            {format(
-                              new Date(license.issueDate),
-                              "MMM d, yyyy"
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {format(
-                              new Date(license.expiryDate),
-                              "MMM d, yyyy"
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge expiryDate={license.expiryDate} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {group.licenses.map((license) => {
+                        const workerName = `${license.worker.firstName} ${license.worker.lastName}`;
+                        return (
+                          <TableRow
+                            key={license.id}
+                            className="hover:bg-accent/50 transition-colors"
+                          >
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/workers/${license.workerId}`}>
+                                      <User className="mr-2 h-4 w-4" />
+                                      Go to Profile
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setDeleteDialog({
+                                        type: "license",
+                                        id: license.id,
+                                        name: `${group.name} license for ${workerName}`,
+                                      })
+                                    }
+                                  >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Remove License
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() =>
+                                      setDeleteDialog({
+                                        type: "worker",
+                                        id: license.workerId,
+                                        name: workerName,
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Worker
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                            <TableCell>
+                              <Link
+                                href={`/workers/${license.workerId}`}
+                                className="font-medium hover:underline"
+                              >
+                                {workerName}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {license.code || "—"}
+                            </TableCell>
+                            <TableCell>
+                              {format(
+                                new Date(license.issueDate),
+                                "MMM d, yyyy"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {format(
+                                new Date(license.expiryDate),
+                                "MMM d, yyyy"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge expiryDate={license.expiryDate} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -261,6 +360,27 @@ export function LicenseStatusTable({ licenses }: LicenseStatusTableProps) {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!deleteDialog} onOpenChange={(open) => !open && setDeleteDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteDialog?.type === "worker" ? "Delete Worker" : "Remove License"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog?.type === "worker"
+                ? `Are you sure you want to delete ${deleteDialog.name}? This will also delete all their licenses. This action cannot be undone.`
+                : `Are you sure you want to remove this ${deleteDialog?.name}? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : deleteDialog?.type === "worker" ? "Delete Worker" : "Remove License"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
