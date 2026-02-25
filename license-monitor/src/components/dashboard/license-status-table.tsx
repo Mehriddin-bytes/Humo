@@ -572,7 +572,7 @@ export function LicenseStatusTable({
                                     <Link
                                       href={`/licenses/${license.id}/edit`}
                                     >
-                                      Edit License
+                                      Edit {license.licenseType.name}
                                     </Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
@@ -581,12 +581,12 @@ export function LicenseStatusTable({
                                       setDeleteDialog({
                                         type: "license",
                                         id: license.id,
-                                        name: `${license.licenseType.name} license for ${employeeName}`,
+                                        name: `${license.licenseType.name} from ${license.worker.firstName}`,
                                       })
                                     }
                                   >
                                     <X className="mr-2 h-4 w-4" />
-                                    Remove License
+                                    Remove {license.licenseType.name} from {license.worker.firstName}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -766,12 +766,12 @@ function LicenseRow({
               onClick={() =>
                 onDeleteLicense(
                   license.id,
-                  `${groupName} license for ${employeeName}`
+                  `${groupName} from ${license.worker.firstName}`
                 )
               }
             >
               <X className="mr-2 h-4 w-4" />
-              Remove License
+              Remove {groupName} from {license.worker.firstName}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"

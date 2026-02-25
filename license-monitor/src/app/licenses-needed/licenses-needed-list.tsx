@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { LicenseRowActions } from "@/components/shared/license-row-actions";
 
 interface WorkerInfo {
   id: string;
@@ -130,6 +131,7 @@ export function LicensesNeededList({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead>Position</TableHead>
                     <TableHead>Code</TableHead>
@@ -146,6 +148,14 @@ export function LicensesNeededList({
                     )
                     .map((entry) => (
                       <TableRow key={`missing-${entry.worker.id}-${typeId}`}>
+                        <TableCell>
+                          <LicenseRowActions
+                            workerId={entry.worker.id}
+                            workerName={`${entry.worker.firstName} ${entry.worker.lastName}`}
+                            showEdit={false}
+                            showRemoveLicense={false}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <Link
                             href={`/workers/${entry.worker.id}`}
@@ -178,6 +188,15 @@ export function LicensesNeededList({
                       );
                       return (
                         <TableRow key={license.id}>
+                          <TableCell>
+                            <LicenseRowActions
+                              workerId={license.worker.id}
+                              licenseId={license.id}
+                              licenseTypeName={group.name}
+                              workerFirstName={license.worker.firstName}
+                              workerName={`${license.worker.firstName} ${license.worker.lastName}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">
                             <Link
                               href={`/workers/${license.worker.id}`}

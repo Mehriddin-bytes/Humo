@@ -17,6 +17,7 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { getLicenseStatus } from "@/lib/license-status";
+import { LicenseRowActions } from "@/components/shared/license-row-actions";
 
 export default async function LicenseTypeDetailPage({
   params,
@@ -98,7 +99,7 @@ export default async function LicenseTypeDetailPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Workers</CardTitle>
+            <CardTitle className="text-sm font-medium">Employees</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{uniqueWorkers}</div>
@@ -124,13 +125,14 @@ export default async function LicenseTypeDetailPage({
 
       <div>
         <h2 className="text-lg font-semibold mb-4">
-          Workers with this license
+          Employees with this license
         </h2>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Worker</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>Employee</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Issue Date</TableHead>
@@ -142,15 +144,24 @@ export default async function LicenseTypeDetailPage({
               {licenseType.licenses.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-muted-foreground py-8"
                   >
-                    No workers have this license yet
+                    No employees have this license yet
                   </TableCell>
                 </TableRow>
               ) : (
                 licenseType.licenses.map((license) => (
                   <TableRow key={license.id}>
+                    <TableCell>
+                      <LicenseRowActions
+                        workerId={license.worker.id}
+                        licenseId={license.id}
+                        licenseTypeName={licenseType.name}
+                        workerFirstName={license.worker.firstName}
+                        workerName={`${license.worker.firstName} ${license.worker.lastName}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Link
                         href={`/workers/${license.worker.id}`}

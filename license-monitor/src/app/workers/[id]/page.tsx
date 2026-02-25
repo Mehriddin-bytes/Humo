@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus, Pencil, Trash2, Mail, Phone, Briefcase } from "lucide-react";
+import { Plus, Pencil, Mail, Phone, Briefcase } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,19 +82,12 @@ export default async function WorkerDetailPage({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Required License Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RequiredLicenseTypesChecklist
-            workerId={worker.id}
-            allLicenseTypes={allLicenseTypes}
-            currentRequired={currentRequired}
-            activeLicenseTypeIds={activeLicenseTypeIds}
-          />
-        </CardContent>
-      </Card>
+      <RequiredLicenseTypesChecklist
+        workerId={worker.id}
+        allLicenseTypes={allLicenseTypes}
+        currentRequired={currentRequired}
+        activeLicenseTypeIds={activeLicenseTypeIds}
+      />
 
       <div>
         <div className="flex items-center justify-between mb-4">

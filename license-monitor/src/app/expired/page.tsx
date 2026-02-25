@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { LicenseRowActions } from "@/components/shared/license-row-actions";
 
 export default async function ExpiredPage() {
   const allLicenses = await prisma.license.findMany({
@@ -97,6 +98,7 @@ export default async function ExpiredPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
                   <TableHead>License Type</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Issue Date</TableHead>
@@ -107,6 +109,16 @@ export default async function ExpiredPage() {
               <TableBody>
                 {licenses.map((license) => (
                   <TableRow key={license.id}>
+                    <TableCell>
+                      <LicenseRowActions
+                        workerId={license.workerId}
+                        licenseId={license.id}
+                        licenseTypeName={license.licenseType.name}
+                        workerFirstName={license.worker.firstName}
+                        workerName={`${license.worker.firstName} ${license.worker.lastName}`}
+                        showProfile={false}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {license.licenseType.name}
                     </TableCell>

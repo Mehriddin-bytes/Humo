@@ -4,9 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -24,7 +31,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import type { LicenseWithType } from "@/types";
@@ -71,7 +77,7 @@ export function LicensesTable({ licenses, workerId }: LicensesTableProps) {
               <TableHead>Issue Date</TableHead>
               <TableHead>Expiry Date</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,6 +99,32 @@ export function LicensesTable({ licenses, workerId }: LicensesTableProps) {
             ) : (
               activeLicenses.map((license) => (
                 <TableRow key={license.id}>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/licenses/${license.id}/edit`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit {license.licenseType.name}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDelete(license.id)}
+                          disabled={deleting === license.id}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deleting === license.id ? "Deleting..." : `Remove ${license.licenseType.name}`}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                   <TableCell className="font-medium">
                     {license.licenseType.name}
                   </TableCell>
@@ -107,43 +139,6 @@ export function LicensesTable({ licenses, workerId }: LicensesTableProps) {
                   </TableCell>
                   <TableCell>
                     <StatusBadge expiryDate={license.expiryDate} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/licenses/${license.id}/edit`}>
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete License</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this{" "}
-                              {license.licenseType.name} license? This action
-                              cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(license.id)}
-                              disabled={deleting === license.id}
-                            >
-                              {deleting === license.id
-                                ? "Deleting..."
-                                : "Delete"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -161,17 +156,36 @@ export function LicensesTable({ licenses, workerId }: LicensesTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
                   <TableHead>License Type</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Issue Date</TableHead>
                   <TableHead>Expiry Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {replacedLicenses.map((license) => (
                   <TableRow key={license.id}>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(license.id)}
+                            disabled={deleting === license.id}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {deleting === license.id ? "Deleting..." : `Remove ${license.licenseType.name}`}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                     <TableCell className="font-medium">
                       {license.licenseType.name}
                     </TableCell>
@@ -189,39 +203,6 @@ export function LicensesTable({ licenses, workerId }: LicensesTableProps) {
                         expiryDate={license.expiryDate}
                         licenseStatus="replaced"
                       />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete Replaced License
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this old{" "}
-                                {license.licenseType.name} license record?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(license.id)}
-                                disabled={deleting === license.id}
-                              >
-                                {deleting === license.id
-                                  ? "Deleting..."
-                                  : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
