@@ -7,7 +7,7 @@ export default function Hero() {
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover blur-sm scale-105"
+        className="absolute inset-0 w-full h-full object-cover blur-[2px] scale-[1.02]"
       >
         <source src="/video/background.mp4" type="video/mp4" />
       </video>
