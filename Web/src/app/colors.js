@@ -3,12 +3,12 @@
  *  HUMO RESTORATIONS — MASTER COLOR SHEET
  * ─────────────────────────────────────────────
  *  All colors for the site are defined HERE.
- *  Tailwind config reads from this file.
- *  To change any color, edit it below.
+ *  Tailwind config and components read from this file.
+ *  To change any color sitewide, edit it below.
  * ─────────────────────────────────────────────
  */
 
-export const colors = {
+const colors = {
   /** ── Navy (Primary Dark Blue) ── */
   navy: {
     DEFAULT: "#081428",
@@ -48,7 +48,6 @@ export const colors = {
   /** ── Static Colors ── */
   white: "#FFFFFF",
   black: "#000000",
-} as const;
+};
 
-/** Selection highlight color (used in globals.css) */
-export const selectionColor = colors.crimson.DEFAULT;
+module.exports = { colors };

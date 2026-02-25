@@ -1,22 +1,25 @@
 "use client";
 
+import Image from "next/image";
+
 export default function Footer() {
   return (
-    <footer className="bg-navy text-white/40">
+    <footer className="bg-navy text-white">
       {/* Main Footer */}
       <div className="container-lg px-6 sm:px-8 lg:px-12 py-16 md:py-20">
         <div className="grid sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-4">
-            <div className="flex items-baseline gap-1.5 mb-5">
-              <span className="font-display text-2xl font-bold tracking-wide text-white">
-                HUMO
-              </span>
-              <span className="text-[11px] font-sans font-bold tracking-widest-xl uppercase text-white">
+            <div className="flex items-end gap-2 mb-5">
+              <Image
+                src="/assets/logo.png"
+                alt="Humo"
+                width={180}
+                height={56}
+                className="h-14 w-auto brightness-0 invert"
+              />
+              <span className="font-display text-lg font-bold tracking-wide text-crimson-light">
                 RESTORATIONS
-              </span>
-              <span className="text-[9px] font-sans font-medium tracking-widest-xl uppercase text-white/50">
-                INC.
               </span>
             </div>
             <p className="text-sm leading-relaxed max-w-xs">
@@ -27,7 +30,7 @@ export default function Footer() {
 
           {/* Navigation */}
           <div className="lg:col-span-2">
-            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/20 mb-5">
+            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/50 mb-5">
               Navigate
             </h4>
             <ul className="space-y-3 text-sm">
@@ -51,7 +54,7 @@ export default function Footer() {
 
           {/* Services */}
           <div className="lg:col-span-3">
-            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/20 mb-5">
+            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/50 mb-5">
               Services
             </h4>
             <ul className="space-y-3 text-sm">
@@ -76,7 +79,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div className="lg:col-span-3">
-            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/20 mb-5">
+            <h4 className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/50 mb-5">
               Get in Touch
             </h4>
             <ul className="space-y-3 text-sm">
@@ -112,7 +115,7 @@ export default function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-white/[0.06]">
-        <div className="container-lg px-6 sm:px-8 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/25">
+        <div className="container-lg px-6 sm:px-8 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
           <p>&copy; 2026 Humo Restorations INC.</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white/50 transition-colors">

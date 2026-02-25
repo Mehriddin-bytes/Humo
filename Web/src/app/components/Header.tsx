@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,23 +30,23 @@ export default function Header() {
     >
       <div className="container-lg flex items-center justify-between h-20 md:h-24 px-6 sm:px-8 lg:px-12">
         {/* Logo */}
-        <a href="#" className="relative z-10 flex items-baseline gap-1.5">
+        <a href="#" className="relative z-10 flex items-center gap-2">
+          <Image
+            src="/assets/logo.png"
+            alt="Humo"
+            width={180}
+            height={56}
+            priority
+            className={`h-14 md:h-16 w-auto transition-all duration-500 ${
+              scrolled ? "" : "brightness-0 invert"
+            }`}
+          />
           <span
-            className={`font-display text-2xl font-bold tracking-wide transition-colors duration-500 ${
-              scrolled ? "text-[#081428]" : "text-white"
+            className={`font-display text-lg md:text-xl font-bold tracking-wide translate-y-0.5 transition-colors duration-500 ${
+              scrolled ? "text-crimson-light" : "text-white"
             }`}
           >
-            HUMO
-          </span>
-          <span className={`text-[11px] font-sans font-bold tracking-widest-xl uppercase transition-colors duration-500 ${
-            scrolled ? "text-[#081428]" : "text-white"
-          }`}>
             RESTORATIONS
-          </span>
-          <span className={`text-[9px] font-sans font-medium tracking-widest-xl uppercase transition-colors duration-500 ${
-            scrolled ? "text-[#081428]/50" : "text-white/50"
-          }`}>
-            INC.
           </span>
         </a>
 
