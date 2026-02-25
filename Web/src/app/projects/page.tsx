@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import Header from "../components/Header";
+import Lightbox from "../components/Lightbox";
 
 const categories = [
   "All",
   "Balcony Restoration",
   "Masonry & Brick",
-  "Waterproofing",
-  "Concrete Repair",
-  "Caulking & Sealant",
-  "Protective Coatings",
+  "Expansion Joint",
 ] as const;
 
 type Category = (typeof categories)[number];
@@ -18,119 +18,101 @@ type Category = (typeof categories)[number];
 type Size = "wide" | "normal";
 
 interface Project {
-  title: string;
+  label: string;
   category: Exclude<Category, "All">;
-  location: string;
+  image: string;
   size: Size;
 }
 
 const projects: Project[] = [
   {
-    title: "Midtown Condo Complex",
+    label: "Balcony Restoration",
     category: "Balcony Restoration",
-    location: "Toronto, ON",
+    image: "/service/Balcony/balcony1.JPG",
     size: "wide",
   },
   {
-    title: "Heritage Brick Facade",
+    label: "Masonry",
     category: "Masonry & Brick",
-    location: "Vaughan, ON",
+    image: "/service/Masonry/masonry.jpg",
     size: "normal",
   },
   {
-    title: "Underground Parking Garage",
-    category: "Waterproofing",
-    location: "Mississauga, ON",
-    size: "normal",
-  },
-  {
-    title: "Commercial Tower Podium",
-    category: "Concrete Repair",
-    location: "Brampton, ON",
-    size: "normal",
-  },
-  {
-    title: "Residential Complex Exterior",
-    category: "Protective Coatings",
-    location: "Richmond Hill, ON",
-    size: "normal",
-  },
-  {
-    title: "Lakeshore Townhomes",
-    category: "Caulking & Sealant",
-    location: "Oakville, ON",
-    size: "wide",
-  },
-  {
-    title: "Highrise Balcony Overhaul",
+    label: "Balcony Restoration",
     category: "Balcony Restoration",
-    location: "North York, ON",
+    image: "/service/Balcony/balcony5.jpg",
     size: "normal",
   },
   {
-    title: "Historic Church Restoration",
+    label: "Masonry",
     category: "Masonry & Brick",
-    location: "Woodbridge, ON",
+    image: "/service/Masonry/masonry1.jpeg",
     size: "normal",
   },
   {
-    title: "Retail Plaza Waterproofing",
-    category: "Waterproofing",
-    location: "Markham, ON",
+    label: "Expansion Joint",
+    category: "Expansion Joint",
+    image: "/service/edg/edging.jpg",
     size: "normal",
   },
   {
-    title: "Parking Structure Rehabilitation",
-    category: "Concrete Repair",
-    location: "Etobicoke, ON",
+    label: "Balcony & Rebar",
+    category: "Balcony Restoration",
+    image: "/service/Balcony/balcony-rebar.JPG",
+    size: "normal",
+  },
+  {
+    label: "Balcony Restoration",
+    category: "Balcony Restoration",
+    image: "/service/Balcony/balcony3.jpeg",
     size: "wide",
   },
   {
-    title: "Condo Envelope Restoration",
-    category: "Caulking & Sealant",
-    location: "Scarborough, ON",
+    label: "Balcony & Rebar",
+    category: "Balcony Restoration",
+    image: "/service/Balcony/balcony-rebar2.JPG",
     size: "normal",
   },
   {
-    title: "Industrial Warehouse Coatings",
-    category: "Protective Coatings",
-    location: "Bolton, ON",
+    label: "Masonry",
+    category: "Masonry & Brick",
+    image: "/service/Masonry/masonry2.jpeg",
+    size: "normal",
+  },
+  {
+    label: "Balcony Restoration",
+    category: "Balcony Restoration",
+    image: "/service/Balcony/balcony4.jpg",
     size: "normal",
   },
 ];
 
 export default function ProjectsPage() {
   const [active, setActive] = useState<Category>("All");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const filtered =
     active === "All"
       ? projects
       : projects.filter((p) => p.category === active);
 
+  const lightboxImages = filtered.map((p) => ({ src: p.image, label: p.label }));
+
+  const handlePrev = useCallback(() => {
+    setLightboxIndex((prev) =>
+      prev !== null ? (prev - 1 + filtered.length) % filtered.length : null
+    );
+  }, [filtered.length]);
+
+  const handleNext = useCallback(() => {
+    setLightboxIndex((prev) =>
+      prev !== null ? (prev + 1) % filtered.length : null
+    );
+  }, [filtered.length]);
+
   return (
     <>
-      {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-lg shadow-[0_1px_0_0_rgba(0,0,0,0.06)]">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between h-20 md:h-24 px-6 sm:px-8 lg:px-12">
-          <Link href="/" className="flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-bold tracking-wide text-[#081428]">
-              HUMO
-            </span>
-            <span className="text-[11px] font-sans font-bold tracking-[0.2em] uppercase text-[#081428]">
-              RESTORATIONS
-            </span>
-            <span className="text-[9px] font-sans font-medium tracking-[0.2em] uppercase text-[#081428]/50">
-              INC.
-            </span>
-          </Link>
-          <Link
-            href="/#contact"
-            className="text-[13px] font-semibold tracking-wide px-6 py-2.5 border border-[#081428] text-[#081428] hover:bg-[#081428] hover:text-white transition-all duration-300"
-          >
-            Free Consultation
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main>
         {/* Hero */}
@@ -146,14 +128,12 @@ export default function ProjectsPage() {
               Back to Home
             </Link>
             <div className="max-w-2xl">
-              <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#C41E3A] mb-5">
-                Our Work
-              </div>
-              <div className="w-12 h-[2px] bg-[#C41E3A] mb-8" />
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold leading-[1.1] tracking-tight text-white mb-6">
+              <div className="label mb-5">Our Work</div>
+              <div className="divider mb-8" />
+              <h1 className="title-xl text-white mb-6">
                 Projects
               </h1>
-              <p className="text-lg md:text-xl leading-relaxed text-white/50 font-light">
+              <p className="body-lg text-white/50">
                 Explore a selection of restoration and construction projects
                 completed across Ontario. Every project reflects our commitment to
                 quality craftsmanship and lasting results.
@@ -173,8 +153,8 @@ export default function ProjectsPage() {
                   onClick={() => setActive(cat)}
                   className={`text-[12px] font-semibold tracking-wide px-5 py-2.5 border transition-all duration-200 ${
                     active === cat
-                      ? "bg-[#081428] border-[#081428] text-white"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-[#081428] hover:text-[#081428]"
+                      ? "bg-navy border-navy text-white"
+                      : "bg-white border-slate-200 text-slate-500 hover:border-navy hover:text-navy"
                   }`}
                 >
                   {cat}
@@ -189,29 +169,31 @@ export default function ProjectsPage() {
 
             {/* Mosaic Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[280px] gap-3">
-              {filtered.map((project) => (
+              {filtered.map((project, i) => (
                 <article
-                  key={project.title}
-                  className={`group relative overflow-hidden cursor-pointer bg-slate-200 ${project.size === "wide" ? "sm:col-span-2" : ""}`}
+                  key={i}
+                  onClick={() => setLightboxIndex(i)}
+                  className={`group relative overflow-hidden cursor-pointer ${project.size === "wide" ? "sm:col-span-2" : ""}`}
                 >
+                  <Image
+                    src={project.image}
+                    alt={project.label}
+                    fill
+                    sizes={project.size === "wide" ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 100vw, 33vw"}
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#081428]/80 via-[#081428]/20 to-transparent z-[1] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/20 to-transparent z-[1] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
 
                   {/* Info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 z-[2] translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/50">
+                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 z-[2]">
+                    <span className="text-[10px] font-semibold tracking-widest-xl uppercase text-white/50">
                       {project.category}
                     </span>
-                    <h3 className="font-display text-base md:text-lg font-semibold text-white mt-1 group-hover:text-[#C41E3A] transition-colors duration-300">
-                      {project.title}
+                    <h3 className="font-display text-base md:text-lg font-semibold text-white mt-1 group-hover:text-crimson-light transition-colors duration-300">
+                      {project.label}
                     </h3>
-                    <div className="flex items-center gap-1.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <svg className="w-3 h-3 text-white/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0115 0z" />
-                      </svg>
-                      <span className="text-[11px] text-white/50">{project.location}</span>
-                    </div>
                   </div>
                 </article>
               ))}
@@ -224,7 +206,7 @@ export default function ProjectsPage() {
               </p>
               <Link
                 href="/#contact"
-                className="inline-flex items-center gap-3 bg-[#081428] text-white text-sm font-semibold tracking-wide px-10 py-4 hover:bg-[#C41E3A] transition-colors duration-300"
+                className="inline-flex items-center gap-3 bg-navy text-white text-sm font-semibold tracking-wide px-10 py-4 hover:bg-crimson transition-colors duration-300"
               >
                 Get a Free Quote
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -236,8 +218,18 @@ export default function ProjectsPage() {
         </section>
       </main>
 
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={handlePrev}
+          onNext={handleNext}
+        />
+      )}
+
       {/* Minimal Footer */}
-      <footer className="bg-[#081428] text-white/25 py-8">
+      <footer className="bg-navy text-white/60 py-8">
         <div className="max-w-[1280px] mx-auto px-6 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <p>&copy; 2026 Humo Restorations INC.</p>
           <Link href="/" className="text-white/40 hover:text-white/70 transition-colors">

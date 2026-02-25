@@ -1,37 +1,45 @@
+import Image from "next/image";
+
 const services = [
   {
     num: "01",
     title: "Balcony Restoration",
+    image: "/service/Balcony/balcony1.JPG",
     description:
       "Complete structural restoration including concrete repair, waterproof membranes, and railing replacement. We return balconies to full safety and aesthetics.",
   },
   {
     num: "02",
     title: "Masonry & Brick",
+    image: "/service/Masonry/masonry.jpg",
     description:
       "Expert brick and stone repair, repointing, and heritage restoration. We maintain structural integrity while preserving architectural character.",
   },
   {
     num: "03",
     title: "Caulking & Sealant",
+    image: "/service/Balcony/balcony-rebar.JPG",
     description:
       "Professional envelope sealing to prevent water infiltration. We protect your building against moisture damage and energy loss.",
   },
   {
     num: "04",
     title: "Waterproofing",
+    image: "/service/Balcony/balcony3.jpeg",
     description:
       "Comprehensive below-grade and above-grade waterproofing systems for foundations, garages, and rooftops. Permanent moisture protection.",
   },
   {
     num: "05",
     title: "Concrete Repair",
+    image: "/service/Balcony/balcony-rebar2.JPG",
     description:
       "Structural concrete restoration including crack injection, spall repair, and carbon fiber reinforcement for lasting durability.",
   },
   {
     num: "06",
     title: "Protective Coatings",
+    image: "/service/Masonry/masonry1.jpeg",
     description:
       "High-performance architectural coatings that shield surfaces from weathering while enhancing visual appeal. Built to last.",
   },
@@ -68,8 +76,15 @@ export default function Services() {
                 {s.num}
               </span>
 
-              {/* Image placeholder */}
-              <div className="relative h-44 mb-6 overflow-hidden bg-slate-100" />
+              {/* Image */}
+              <div className="relative h-44 mb-6 overflow-hidden bg-slate-100">
+                <Image
+                  src={s.image}
+                  alt={s.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
 
               <h3 className="font-display text-xl font-semibold text-navy mb-3 group-hover:text-crimson transition-colors duration-300">
                 {s.title}

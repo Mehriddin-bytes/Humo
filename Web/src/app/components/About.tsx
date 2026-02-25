@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function About() {
   return (
     <section id="about" className="section-pad bg-white overflow-hidden">
@@ -6,7 +8,14 @@ export default function About() {
           {/* Image Column */}
           <div className="lg:col-span-5 relative">
             <div className="relative">
-              <div className="aspect-[3/4] bg-slate-100" />
+              <div className="relative aspect-[3/4] bg-slate-100">
+                <Image
+                  src="/service/Balcony/balcony5-copy.jpg"
+                  alt="Balcony restoration work"
+                  fill
+                  className="object-cover"
+                />
+              </div>
               {/* Floating accent block */}
               <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-navy flex flex-col items-center justify-center text-center hidden md:flex">
                 <span className="font-display text-4xl font-semibold text-white">

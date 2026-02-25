@@ -1,37 +1,65 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import Image from "next/image";
+import Lightbox from "./Lightbox";
+
 const projects = [
   {
-    title: "Midtown Condo Complex",
-    category: "Balcony Restoration",
+    label: "Balcony Restoration",
+    image: "/service/Balcony/balcony2.JPG",
     span: "md:col-span-2 md:row-span-2",
     aspect: "aspect-square md:aspect-auto md:h-full",
   },
   {
-    title: "Heritage Brick Facade",
-    category: "Masonry",
+    label: "Masonry",
+    image: "/service/Masonry/masonry3.jpeg",
     span: "",
     aspect: "aspect-[4/3]",
   },
   {
-    title: "Underground Garage",
-    category: "Waterproofing",
+    label: "Balcony & Rebar",
+    image: "/service/Balcony/balcony-rebar3.JPG",
     span: "",
     aspect: "aspect-[4/3]",
   },
   {
-    title: "Commercial Tower",
-    category: "Concrete Repair",
+    label: "Balcony Restoration",
+    image: "/service/Balcony/balcony4.jpg",
     span: "",
     aspect: "aspect-[4/3]",
   },
   {
-    title: "Residential Exterior",
-    category: "Coatings",
+    label: "Balcony Restoration",
+    image: "/service/Balcony/balcony5-copy.jpg",
+    span: "",
+    aspect: "aspect-[4/3]",
+  },
+  {
+    label: "Masonry",
+    image: "/service/Masonry/masonry.jpg",
     span: "",
     aspect: "aspect-[4/3]",
   },
 ];
 
 export default function Gallery() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const lightboxImages = projects.map((p) => ({ src: p.image, label: p.label }));
+
+  const handlePrev = useCallback(() => {
+    setLightboxIndex((prev) =>
+      prev !== null ? (prev - 1 + projects.length) % projects.length : null
+    );
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setLightboxIndex((prev) =>
+      prev !== null ? (prev + 1) % projects.length : null
+    );
+  }, []);
+
   return (
     <section id="gallery" className="section-pad bg-white">
       <div className="container-lg">
@@ -45,34 +73,50 @@ export default function Gallery() {
             </h2>
           </div>
           <p className="body-md max-w-md">
-            A selection of completed work across the GTA. Each project reflects
+            A selection of completed work across Ontario. Each project reflects
             our commitment to quality and precision.
           </p>
         </div>
 
         {/* Masonry-style Grid */}
         <div className="grid md:grid-cols-3 gap-3">
-          {projects.map((p) => (
+          {projects.map((p, i) => (
             <div
-              key={p.title}
-              className={`group relative overflow-hidden cursor-pointer bg-slate-100 ${p.span} ${p.aspect}`}
+              key={i}
+              onClick={() => setLightboxIndex(i)}
+              className={`group relative overflow-hidden cursor-pointer ${p.span} ${p.aspect}`}
             >
+              <Image
+                src={p.image}
+                alt={p.label}
+                fill
+                sizes={p.span ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 100vw, 33vw"}
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent z-[1]" />
 
-              {/* Info */}
+              {/* Label */}
               <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-[2]">
-                <span className="text-[10px] font-semibold tracking-widest-xl uppercase text-white/50">
-                  {p.category}
+                <span className="text-[11px] font-semibold tracking-widest-xl uppercase text-white/70">
+                  {p.label}
                 </span>
-                <h3 className="font-display text-lg md:text-xl font-semibold text-white mt-1 group-hover:text-crimson-light transition-colors duration-300">
-                  {p.title}
-                </h3>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={handlePrev}
+          onNext={handleNext}
+        />
+      )}
     </section>
   );
 }
