@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-4">
-            <div className="flex items-end gap-2 mb-5">
+            <div className="flex items-center gap-2 mb-5">
               <Image
                 src="/assets/logo.png"
                 alt="Humo"
@@ -18,7 +18,7 @@ export default function Footer() {
                 height={56}
                 className="h-14 w-auto brightness-0 invert"
               />
-              <span className="font-display text-lg font-bold tracking-wide text-crimson-light">
+              <span className="font-display text-lg font-bold tracking-wide translate-y-0.5 text-crimson-light">
                 RESTORATIONS
               </span>
             </div>
