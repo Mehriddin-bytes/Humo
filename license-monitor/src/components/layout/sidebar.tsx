@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -10,13 +11,16 @@ import {
   FileCheck,
   AlertTriangle,
   XCircle,
+  ClipboardList,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/workers", label: "Workers", icon: Users },
+  { href: "/workers", label: "Employees", icon: Users },
   { href: "/license-types", label: "License Types", icon: FileCheck },
+  { href: "/licenses-needed", label: "Licenses Needed", icon: ClipboardList },
   { href: "/expiring", label: "Expiring Soon", icon: AlertTriangle },
   { href: "/expired", label: "Expired", icon: XCircle },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -24,6 +28,13 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-full w-64 flex-col border-r bg-card">
@@ -54,6 +65,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-t px-3 py-4">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
     </aside>
   );
 }

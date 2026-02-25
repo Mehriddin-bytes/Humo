@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Mirror of colors.ts — for CSS-native references only */
+  --color-crimson: #C41E3A;
+  --color-navy: #081428;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #C41E3A !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-slate-800 bg-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .section-pad {
+    @apply px-6 sm:px-8 lg:px-12 py-24 md:py-32;
+  }
+
+  .container-lg {
+    @apply max-w-[1280px] mx-auto;
+  }
+
+  .container-md {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .label {
+    @apply text-[11px] font-sans font-semibold tracking-widest-xl uppercase text-crimson;
+  }
+
+  .title-xl {
+    @apply font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight;
+  }
+
+  .title-lg {
+    @apply font-display text-3xl sm:text-4xl md:text-5xl font-semibold leading-[1.15] tracking-tight;
+  }
+
+  .title-md {
+    @apply font-display text-2xl md:text-3xl font-semibold leading-snug;
+  }
+
+  .body-lg {
+    @apply text-lg md:text-xl leading-relaxed text-slate-500 font-light;
+  }
+
+  .body-md {
+    @apply text-base leading-relaxed text-slate-500;
+  }
+
+  .divider {
+    @apply w-12 h-[2px] bg-crimson;
+  }
+}

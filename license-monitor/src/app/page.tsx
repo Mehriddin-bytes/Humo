@@ -7,41 +7,53 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import { LicenseStatusTable } from "@/components/dashboard/license-status-table";
 
 export default async function DashboardPage() {
-  const totalWorkers = await prisma.worker.count();
-
-  const licenses = await prisma.license.findMany({
-    where: { status: "active" },
-    include: {
-      licenseType: true,
-      worker: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          position: true,
+  const [workers, licenses, requiredEntries] = await Promise.all([
+    prisma.worker.findMany({
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        position: true,
+      },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+    }),
+    prisma.license.findMany({
+      where: { status: "active" },
+      include: {
+        licenseType: true,
+        worker: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            position: true,
+          },
         },
       },
-    },
-    orderBy: { expiryDate: "asc" },
-  });
-
-  const requiredEntries = await prisma.workerRequiredLicenseType.findMany({
-    include: {
-      licenseType: true,
-      worker: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          position: true,
+      orderBy: { expiryDate: "asc" },
+    }),
+    prisma.workerRequiredLicenseType.findMany({
+      include: {
+        licenseType: true,
+        worker: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            position: true,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
+
+  const totalWorkers = workers.length;
 
   // Find required license types where the worker has no active license
   const activeLicenseKeys = new Set(
@@ -69,18 +81,21 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <PageHeader
         title="Dashboard"
-        description="Overview of all worker licenses and their status"
+        description="Overview of all employee licenses and their status"
       />
       <StatsCards
         totalWorkers={totalWorkers}
         totalLicenses={licenses.length}
         expiringSoon={expiringSoon}
         expired={expired}
+        noLicenses={missingLicenses.length}
+        licensesNeeded={missingLicenses.length + expiringSoon}
       />
-      <div>
-        <h2 className="text-lg font-semibold mb-4">All Licenses</h2>
-        <LicenseStatusTable licenses={licenses} missingLicenses={missingLicenses} />
-      </div>
+      <LicenseStatusTable
+        licenses={licenses}
+        missingLicenses={missingLicenses}
+        workers={workers}
+      />
     </div>
   );
 }

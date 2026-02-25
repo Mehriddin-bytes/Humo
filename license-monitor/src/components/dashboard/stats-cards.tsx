@@ -5,6 +5,8 @@ import {
   FileCheck,
   AlertTriangle,
   XCircle,
+  FileX,
+  ClipboardList,
   ArrowRight,
 } from "lucide-react";
 
@@ -13,6 +15,8 @@ interface StatsCardsProps {
   totalLicenses: number;
   expiringSoon: number;
   expired: number;
+  noLicenses: number;
+  licensesNeeded: number;
 }
 
 export function StatsCards({
@@ -20,12 +24,14 @@ export function StatsCards({
   totalLicenses,
   expiringSoon,
   expired,
+  noLicenses,
+  licensesNeeded,
 }: StatsCardsProps) {
   const cards = [
     {
-      title: "Total Workers",
+      title: "Total Employees",
       value: totalWorkers,
-      description: "View all workers",
+      description: "View all employees",
       icon: Users,
       color: "text-blue-600",
       bgHover:
@@ -33,7 +39,7 @@ export function StatsCards({
       href: "/workers",
     },
     {
-      title: "Total Licenses",
+      title: totalLicenses === 1 ? "Total License" : "Total Licenses",
       value: totalLicenses,
       description: "View by license type",
       icon: FileCheck,
@@ -41,6 +47,26 @@ export function StatsCards({
       bgHover:
         "hover:border-green-300 hover:bg-green-50/50 dark:hover:bg-green-950/20",
       href: "/license-types",
+    },
+    {
+      title: "Licenses Needed",
+      value: licensesNeeded,
+      description: `${noLicenses} missing, ${expiringSoon} expiring`,
+      icon: ClipboardList,
+      color: "text-purple-600",
+      bgHover:
+        "hover:border-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20",
+      href: "/licenses-needed",
+    },
+    {
+      title: noLicenses === 1 ? "No License" : "No Licenses",
+      value: noLicenses,
+      description: "Missing required",
+      icon: FileX,
+      color: "text-gray-600",
+      bgHover:
+        "hover:border-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-950/20",
+      href: "/licenses-needed",
     },
     {
       title: "Expiring Soon",
@@ -65,7 +91,7 @@ export function StatsCards({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
         <Link key={card.title} href={card.href}>
           <Card
