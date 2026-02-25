@@ -21,7 +21,7 @@ export default function Footer() {
             </div>
             <p className="text-sm leading-relaxed max-w-xs">
               Premium restoration and masonry services across Ontario
-              Building excellence since 2015.
+              Building excellence since 2017.
             </p>
           </div>
 

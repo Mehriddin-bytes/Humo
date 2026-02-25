@@ -35,7 +35,7 @@ export default function About() {
             <div className="space-y-6 mb-12">
               <p className="body-md">
                 Humo Restorations INC. is a full-service restoration and masonry
-                firm proudly serving across Ontario. Since 2015, we
+                firm proudly serving across Ontario. Since 2017, we
                 have specialized in returning structures to their original
                 strength and beauty — from heritage buildings to modern
                 high-rises.
