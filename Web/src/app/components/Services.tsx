@@ -1,4 +1,8 @@
+"use client";
+
+import { useState, useCallback } from "react";
 import Image from "next/image";
+import Lightbox from "./Lightbox";
 
 const services = [
   {
@@ -45,7 +49,21 @@ const services = [
   },
 ];
 
+const lightboxImages = services.map((s) => ({ src: s.image, label: s.title }));
+
 export default function Services() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const prevImage = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i - 1 + services.length) % services.length : null)),
+    []
+  );
+  const nextImage = useCallback(
+    () => setLightboxIndex((i) => (i !== null ? (i + 1) % services.length : null)),
+    []
+  );
+
   return (
     <section id="services" className="section-pad bg-slate-50">
       <div className="container-lg">
@@ -66,10 +84,10 @@ export default function Services() {
 
         {/* Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-200">
-          {services.map((s) => (
+          {services.map((s, i) => (
             <div
               key={s.num}
-              className="group bg-white p-8 md:p-10 flex flex-col"
+              className="group bg-white p-5 md:p-6 flex flex-col"
             >
               {/* Number */}
               <span className="text-[11px] font-mono text-slate-300 tracking-wider mb-6">
@@ -77,12 +95,15 @@ export default function Services() {
               </span>
 
               {/* Image */}
-              <div className="relative h-44 mb-6 overflow-hidden bg-slate-100">
+              <div
+                className="relative h-64 md:h-72 mb-6 -mx-5 md:-mx-6 overflow-hidden bg-slate-100 cursor-pointer"
+                onClick={() => setLightboxIndex(i)}
+              >
                 <Image
                   src={s.image}
                   alt={s.title}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
 
@@ -96,6 +117,17 @@ export default function Services() {
           ))}
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={closeLightbox}
+          onPrev={prevImage}
+          onNext={nextImage}
+        />
+      )}
     </section>
   );
 }

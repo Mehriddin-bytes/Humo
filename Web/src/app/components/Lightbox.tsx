@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 
 interface LightboxProps {
@@ -24,15 +25,23 @@ export default function Lightbox({ images, index, onClose, onPrev, onNext }: Lig
   );
 
   useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
     document.addEventListener("keydown", handleKey);
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handleKey);
-      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      window.scrollTo(0, scrollY);
     };
   }, [handleKey]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
       onClick={onClose}
@@ -96,6 +105,7 @@ export default function Lightbox({ images, index, onClose, onPrev, onNext }: Lig
           {index + 1} / {images.length}
         </p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
