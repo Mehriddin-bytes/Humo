@@ -15,12 +15,13 @@ const categories = [
 
 type Category = (typeof categories)[number];
 
+type Size = "wide" | "normal";
+
 interface Project {
   title: string;
   category: Exclude<Category, "All">;
   location: string;
-  description: string;
-  featured?: boolean;
+  size: Size;
 }
 
 const projects: Project[] = [
@@ -28,86 +29,73 @@ const projects: Project[] = [
     title: "Midtown Condo Complex",
     category: "Balcony Restoration",
     location: "Toronto, ON",
-    description:
-      "Full balcony restoration across 14 floors including concrete repair, waterproof membrane installation, and new railing systems.",
-    featured: true,
+    size: "wide",
   },
   {
     title: "Heritage Brick Facade",
     category: "Masonry & Brick",
     location: "Vaughan, ON",
-    description:
-      "Complete repointing and brick replacement on a heritage-designated commercial building facade.",
+    size: "normal",
   },
   {
     title: "Underground Parking Garage",
     category: "Waterproofing",
     location: "Mississauga, ON",
-    description:
-      "Comprehensive waterproofing and drainage system for a 200-space underground parking structure.",
+    size: "normal",
   },
   {
     title: "Commercial Tower Podium",
     category: "Concrete Repair",
     location: "Brampton, ON",
-    description:
-      "Structural concrete restoration of a 5-storey podium including carbon fiber reinforcement.",
+    size: "normal",
   },
   {
     title: "Residential Complex Exterior",
     category: "Protective Coatings",
     location: "Richmond Hill, ON",
-    description:
-      "Application of elastomeric protective coatings to exterior walls and balcony soffits.",
+    size: "normal",
   },
   {
     title: "Lakeshore Townhomes",
     category: "Caulking & Sealant",
     location: "Oakville, ON",
-    description:
-      "Full window and expansion joint caulking replacement for a 48-unit townhome complex.",
+    size: "wide",
   },
   {
     title: "Highrise Balcony Overhaul",
     category: "Balcony Restoration",
     location: "North York, ON",
-    description:
-      "Restoration of 220 balconies including structural repairs, waterproofing, and new tile finishes.",
+    size: "normal",
   },
   {
     title: "Historic Church Restoration",
     category: "Masonry & Brick",
     location: "Woodbridge, ON",
-    description:
-      "Delicate stone and brick restoration preserving original architectural details on a century-old church.",
+    size: "normal",
   },
   {
     title: "Retail Plaza Waterproofing",
     category: "Waterproofing",
     location: "Markham, ON",
-    description:
-      "Below-grade waterproofing and foundation repair for a busy retail plaza with active tenants.",
+    size: "normal",
   },
   {
     title: "Parking Structure Rehabilitation",
     category: "Concrete Repair",
     location: "Etobicoke, ON",
-    description:
-      "Multi-level parking garage concrete rehabilitation including traffic-bearing membrane installation.",
+    size: "wide",
   },
   {
     title: "Condo Envelope Restoration",
     category: "Caulking & Sealant",
     location: "Scarborough, ON",
-    description:
-      "Complete building envelope re-sealing for a 22-storey residential condominium.",
+    size: "normal",
   },
   {
     title: "Industrial Warehouse Coatings",
     category: "Protective Coatings",
     location: "Bolton, ON",
-    description:
-      "Anti-corrosion and protective coating application on structural steel and concrete surfaces.",
+    size: "normal",
   },
 ];
 
@@ -199,53 +187,30 @@ export default function ProjectsPage() {
               {filtered.length} project{filtered.length !== 1 ? "s" : ""}
             </p>
 
-            {/* Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Mosaic Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[280px] gap-3">
               {filtered.map((project) => (
                 <article
                   key={project.title}
-                  className="group bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className={`group relative overflow-hidden cursor-pointer bg-slate-200 ${project.size === "wide" ? "sm:col-span-2" : ""}`}
                 >
-                  {/* Image Placeholder */}
-                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#081428]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[1]" />
-                    <div className="absolute bottom-4 left-4 z-[2] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/60">
-                        {project.category}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#081428]/80 via-[#081428]/20 to-transparent z-[1] opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <h3 className="font-display text-lg font-semibold text-[#081428] group-hover:text-[#C41E3A] transition-colors duration-300">
-                        {project.title}
-                      </h3>
-                      <svg
-                        className="w-4 h-4 mt-1.5 shrink-0 text-slate-300 group-hover:text-[#C41E3A] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                      </svg>
-                    </div>
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <svg className="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  {/* Info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 z-[2] translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/50">
+                      {project.category}
+                    </span>
+                    <h3 className="font-display text-base md:text-lg font-semibold text-white mt-1 group-hover:text-[#C41E3A] transition-colors duration-300">
+                      {project.title}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <svg className="w-3 h-3 text-white/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0115 0z" />
                       </svg>
-                      <span className="text-[12px] text-slate-400">{project.location}</span>
-                    </div>
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      {project.description}
-                    </p>
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                      <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[#C41E3A]">
-                        {project.category}
-                      </span>
+                      <span className="text-[11px] text-white/50">{project.location}</span>
                     </div>
                   </div>
                 </article>

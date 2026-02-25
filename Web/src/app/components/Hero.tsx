@@ -1,8 +1,16 @@
 export default function Hero() {
   return (
     <section className="relative h-screen min-h-[700px] flex items-end overflow-hidden bg-navy">
-      {/* Background placeholder */}
-      <div className="absolute inset-0 bg-gradient-to-br from-navy-700 via-navy to-slate-900" />
+      {/* Background video */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover blur-sm scale-105"
+      >
+        <source src="/video/background.mp4" type="video/mp4" />
+      </video>
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-navy/30" />
 
