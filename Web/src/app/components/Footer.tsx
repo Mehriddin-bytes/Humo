@@ -92,7 +92,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://maps.apple.com/?address=131+Whitmore+Rd+Unit+24,+Woodbridge,+ON"
+                  href="https://maps.apple/p/s96Fhicd97ZYj3"
                   onClick={(e) => {
                     const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
                     if (!isApple) {

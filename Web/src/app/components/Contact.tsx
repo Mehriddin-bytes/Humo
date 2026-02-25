@@ -98,7 +98,7 @@ export default function Contact() {
                   Address
                 </span>
                 <a
-                  href="https://maps.apple.com/?address=Humo+Restorations"
+                  href="https://maps.apple/p/s96Fhicd97ZYj3"
                   onClick={(e) => {
                     const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
                     if (!isApple) {
