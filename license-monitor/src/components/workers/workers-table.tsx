@@ -33,7 +33,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { ExportButton } from "@/components/shared/export-button";
 import { getWorstStatus } from "@/lib/license-status";
+import type { ExportData } from "@/lib/export";
 import type { WorkerWithLicenses } from "@/types";
 
 interface WorkersTableProps {
@@ -56,6 +58,24 @@ export function WorkersTable({ workers }: WorkersTableProps) {
     return name.includes(q) || position.includes(q);
   });
 
+  function getExportData(): ExportData {
+    return {
+      title: "Employees",
+      headers: ["Name", "Position", "Phone", "Email", "Licenses", "Status"],
+      rows: filtered.map((worker) => {
+        const worstStatus = getWorstStatus(worker.licenses);
+        return [
+          `${worker.firstName} ${worker.lastName}`,
+          worker.position || "",
+          worker.phone || "",
+          worker.email || "",
+          String(worker.licenses.length),
+          worstStatus ? worstStatus.label : "No licenses",
+        ];
+      }),
+    };
+  }
+
   async function handleDelete() {
     if (!deleteDialog) return;
     setIsDeleting(true);
@@ -74,14 +94,17 @@ export function WorkersTable({ workers }: WorkersTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search employees..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex items-center justify-between">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search employees..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <ExportButton data={getExportData()} />
       </div>
       <div className="rounded-md border">
         <Table>

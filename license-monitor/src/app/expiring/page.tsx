@@ -18,6 +18,7 @@ import {
 import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { LicenseRowActions } from "@/components/shared/license-row-actions";
+import { ExportButton } from "@/components/shared/export-button";
 
 export default async function ExpiringPage() {
   const allLicenses = await prisma.license.findMany({
@@ -71,6 +72,23 @@ export default async function ExpiringPage() {
     }
   }
 
+  const exportData = {
+    title: "Expiring Licenses",
+    headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Days Left", "Status"],
+    rows: expiring.map((license) => {
+      const { daysUntil, label } = getLicenseStatus(license.expiryDate);
+      return [
+        `${license.worker.firstName} ${license.worker.lastName}`,
+        license.licenseType.name,
+        license.code || "",
+        format(new Date(license.issueDate), "MMM d, yyyy"),
+        format(new Date(license.expiryDate), "MMM d, yyyy"),
+        `${daysUntil} days`,
+        label,
+      ];
+    }),
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -83,7 +101,9 @@ export default async function ExpiringPage() {
         <PageHeader
           title="Expiring Soon"
           description={`${expiring.length} license${expiring.length !== 1 ? "s" : ""} expiring within 90 days across ${workerMap.size} worker${workerMap.size !== 1 ? "s" : ""}`}
-        />
+        >
+          <ExportButton data={exportData} />
+        </PageHeader>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

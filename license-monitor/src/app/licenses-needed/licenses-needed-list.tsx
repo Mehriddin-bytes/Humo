@@ -16,6 +16,8 @@ import {
 import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { LicenseRowActions } from "@/components/shared/license-row-actions";
+import { ExportButton } from "@/components/shared/export-button";
+import type { ExportData } from "@/lib/export";
 
 interface WorkerInfo {
   id: string;
@@ -87,10 +89,41 @@ export function LicensesNeededList({
     });
   }
 
+  function getExportData(): ExportData {
+    const rows: string[][] = [];
+    for (const entry of missingLicenses) {
+      rows.push([
+        entry.licenseTypeName,
+        `${entry.worker.firstName} ${entry.worker.lastName}`,
+        entry.worker.position || "",
+        "Missing",
+        "",
+      ]);
+    }
+    for (const license of expiringLicenses) {
+      const { daysUntil } = getLicenseStatus(new Date(license.expiryDate));
+      rows.push([
+        license.licenseTypeName,
+        `${license.worker.firstName} ${license.worker.lastName}`,
+        license.worker.position || "",
+        "Expiring",
+        `${format(new Date(license.expiryDate), "MMM d, yyyy")} (${daysUntil}d left)`,
+      ]);
+    }
+    return {
+      title: "Licenses Needed",
+      headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
+      rows,
+    };
+  }
+
   if (sortedGroups.length === 0) return null;
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <ExportButton data={getExportData()} />
+      </div>
       {sortedGroups.map(([typeId, group]) => {
         const total = group.missing.length + group.expiring.length;
         const isExpanded = expandedGroups.has(typeId);

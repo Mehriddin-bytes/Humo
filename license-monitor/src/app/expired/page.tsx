@@ -18,6 +18,7 @@ import {
 import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { LicenseRowActions } from "@/components/shared/license-row-actions";
+import { ExportButton } from "@/components/shared/export-button";
 
 export default async function ExpiredPage() {
   const allLicenses = await prisma.license.findMany({
@@ -59,6 +60,22 @@ export default async function ExpiredPage() {
     }
   }
 
+  const exportData = {
+    title: "Expired Licenses",
+    headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
+    rows: expired.map((license) => {
+      const { label } = getLicenseStatus(license.expiryDate);
+      return [
+        `${license.worker.firstName} ${license.worker.lastName}`,
+        license.licenseType.name,
+        license.code || "",
+        format(new Date(license.issueDate), "MMM d, yyyy"),
+        format(new Date(license.expiryDate), "MMM d, yyyy"),
+        label,
+      ];
+    }),
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -71,7 +88,9 @@ export default async function ExpiredPage() {
         <PageHeader
           title="Expired Licenses"
           description={`${expired.length} license${expired.length !== 1 ? "s" : ""} have expired across ${workerMap.size} worker${workerMap.size !== 1 ? "s" : ""}`}
-        />
+        >
+          <ExportButton data={exportData} />
+        </PageHeader>
       </div>
 
       {Array.from(workerMap.values()).map(({ worker, licenses }) => (

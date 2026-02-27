@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +81,14 @@ export default async function LicenseTypeDetailPage({
         <PageHeader
           title={licenseType.name}
           description={licenseType.description || undefined}
-        />
+        >
+          <Button variant="outline" asChild>
+            <Link href={`/license-types/${licenseType.id}/edit`}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+        </PageHeader>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

@@ -1,20 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getLicenseStatus } from "@/lib/license-status";
 import { FileCheck, CheckCircle, CircleOff } from "lucide-react";
+import { LicenseTypesTable } from "./license-types-table";
 
 export default async function LicenseTypesPage() {
   const licenseTypes = await prisma.licenseType.findMany({
@@ -81,90 +72,40 @@ export default async function LicenseTypesPage() {
         </Card>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>License Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-center">Total Licenses</TableHead>
-              <TableHead className="text-center">Workers</TableHead>
-              <TableHead className="text-center">Expired</TableHead>
-              <TableHead className="text-center">Expiring Soon</TableHead>
-              <TableHead className="text-center">Valid</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {licenseTypes.map((lt) => {
-              const uniqueWorkers = new Set(
-                lt.licenses.map((l) => l.workerId)
-              ).size;
+      <LicenseTypesTable
+        licenseTypes={licenseTypes.map((lt) => {
+          const uniqueWorkers = new Set(
+            lt.licenses.map((l) => l.workerId)
+          ).size;
 
-              let expired = 0;
-              let expiringSoon = 0;
-              let valid = 0;
+          let expired = 0;
+          let expiringSoon = 0;
+          let valid = 0;
 
-              for (const license of lt.licenses) {
-                const { status } = getLicenseStatus(license.expiryDate);
-                if (status === "expired") expired++;
-                else if (
-                  status === "critical" ||
-                  status === "warning" ||
-                  status === "caution"
-                )
-                  expiringSoon++;
-                else valid++;
-              }
+          for (const license of lt.licenses) {
+            const { status } = getLicenseStatus(license.expiryDate);
+            if (status === "expired") expired++;
+            else if (
+              status === "critical" ||
+              status === "warning" ||
+              status === "caution"
+            )
+              expiringSoon++;
+            else valid++;
+          }
 
-              return (
-                <TableRow
-                  key={lt.id}
-                  className="hover:bg-accent/50 transition-colors"
-                >
-                  <TableCell>
-                    <Link
-                      href={`/license-types/${lt.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {lt.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                    {lt.description || "—"}
-                  </TableCell>
-                  <TableCell className="text-center font-medium">
-                    {lt.licenses.length}
-                  </TableCell>
-                  <TableCell className="text-center font-medium">
-                    {uniqueWorkers}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {expired > 0 ? (
-                      <Badge variant="destructive">{expired}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {expiringSoon > 0 ? (
-                      <Badge variant="orange">{expiringSoon}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {valid > 0 ? (
-                      <Badge variant="success">{valid}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+          return {
+            id: lt.id,
+            name: lt.name,
+            description: lt.description,
+            totalLicenses: lt.licenses.length,
+            uniqueWorkers,
+            expired,
+            expiringSoon,
+            valid,
+          };
+        })}
+      />
     </div>
   );
 }
