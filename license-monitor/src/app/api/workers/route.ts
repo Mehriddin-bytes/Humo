@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, DEFAULT_REQUIRED_LICENSE_TYPES } from "@/lib/prisma";
 import { workerSchema } from "@/lib/validations/worker";
 
 export async function GET(request: NextRequest) {
@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+
+  // Look up the default required license types
+  const defaultTypes = await prisma.licenseType.findMany({
+    where: { name: { in: DEFAULT_REQUIRED_LICENSE_TYPES } },
+    select: { id: true },
+  });
+
   const worker = await prisma.worker.create({
     data: {
       firstName: data.firstName,
@@ -47,6 +54,9 @@ export async function POST(request: NextRequest) {
       phone: data.phone || null,
       position: data.position || null,
       notes: data.notes || null,
+      requiredLicenseTypes: {
+        create: defaultTypes.map((lt) => ({ licenseTypeId: lt.id })),
+      },
     },
   });
 
