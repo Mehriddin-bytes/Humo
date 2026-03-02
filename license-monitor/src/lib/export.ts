@@ -88,12 +88,9 @@ export async function exportToExcel(data: ExportData): Promise<void> {
   downloadBlob(blob, `${data.title}.xls`);
 }
 
-export function exportToPDF(data: ExportData): void {
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow pop-ups to export as PDF.");
-    return;
-  }
+export async function exportToPDF(data: ExportData): Promise<void> {
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
 
   const now = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -101,188 +98,127 @@ export function exportToPDF(data: ExportData): void {
     day: "numeric",
   });
 
-  const headerCells =
-    `<th class="row-num">#</th>` +
-    data.headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
 
-  const bodyRows = data.rows
-    .map((row, idx) => {
-      const cells = row
-        .map((cell, colIdx) => {
-          const cls = getStatusClass(cell, colIdx, data.headers);
-          return `<td${cls ? ` class="${cls}"` : ""}>${escapeHtml(cell || "—")}</td>`;
-        })
-        .join("");
-      return `<tr><td class="row-num">${idx + 1}</td>${cells}</tr>`;
-    })
-    .join("");
+  // --- Header ---
+  doc.setFillColor(31, 41, 55);
+  doc.rect(0, 0, pageWidth, 22, "F");
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>${escapeHtml(data.title)} — WPL License Monitor</title>
-  <style>
-    @page {
-      size: landscape;
-      margin: 15mm;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-      padding: 32px 40px;
-      color: #1e293b;
-      background: #fff;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text(data.title, 14, 11);
 
-    /* Header */
-    .report-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 3px solid #1f2937;
-    }
-    .report-header .brand {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 4px;
-    }
-    .report-header h1 {
-      font-size: 22px;
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-    }
-    .report-header .meta {
-      text-align: right;
-      font-size: 10px;
-      color: #64748b;
-      line-height: 1.6;
-    }
-    .report-header .meta strong {
-      color: #334155;
-    }
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(203, 213, 225);
+  doc.text("WPL License Monitor", 14, 17);
 
-    /* Summary bar */
-    .summary {
-      display: flex;
-      gap: 24px;
-      margin-bottom: 16px;
-      padding: 10px 16px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #475569;
-    }
-    .summary .stat {
-      font-weight: 700;
-      color: #0f172a;
-    }
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Generated: ${now}  |  ${data.rows.length} records`, pageWidth - 14, 11, { align: "right" });
 
-    /* Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-      border: 1px solid #cbd5e1;
-    }
-    thead { background: #1f2937; }
-    th {
-      padding: 9px 12px;
-      text-align: left;
-      font-weight: 700;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #f1f5f9;
-      border: 1px solid #374151;
-      white-space: nowrap;
-    }
-    td {
-      padding: 7px 12px;
-      border: 1px solid #e2e8f0;
-      color: #334155;
-    }
-    tbody tr:nth-child(even) { background: #f8fafc; }
-    tbody tr:hover { background: #f1f5f9; }
+  // --- Summary bar ---
+  const summaryStats = getSummaryStatsText(data);
+  if (summaryStats) {
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, 26, pageWidth - 28, 8, 1.5, 1.5, "FD");
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(summaryStats, 18, 31);
+  }
 
-    /* Row number */
-    .row-num {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 9px;
-      width: 30px;
-      min-width: 30px;
-    }
+  const startY = summaryStats ? 38 : 28;
 
-    /* Status colors */
-    .status-expired { color: #dc2626; font-weight: 700; }
-    .status-critical { color: #dc2626; font-weight: 600; }
-    .status-warning { color: #ea580c; font-weight: 600; }
-    .status-caution { color: #ca8a04; font-weight: 600; }
-    .status-valid { color: #16a34a; font-weight: 600; }
-    .status-missing { color: #1e293b; font-weight: 700; background: #fef2f2; }
+  // --- Status column index ---
+  const statusIdx = data.headers.findIndex((h) => h.toLowerCase() === "status");
+  const daysLeftIdx = data.headers.findIndex((h) => h.toLowerCase().includes("days left"));
 
-    /* Footer */
-    .report-footer {
-      margin-top: 20px;
-      padding-top: 12px;
-      border-top: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      font-size: 9px;
-      color: #94a3b8;
-    }
+  // --- Table ---
+  autoTable(doc, {
+    head: [["#", ...data.headers]],
+    body: data.rows.map((row, idx) => [String(idx + 1), ...row.map((c) => c || "—")]),
+    startY,
+    margin: { left: 14, right: 14 },
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 2.5,
+      lineColor: [226, 232, 240],
+      lineWidth: 0.2,
+      textColor: [51, 65, 85],
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [31, 41, 55],
+      textColor: [241, 245, 249],
+      fontStyle: "bold",
+      fontSize: 7,
+      cellPadding: 3,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 8, textColor: [148, 163, 184], fontSize: 6.5 },
+    },
+    didParseCell(hookData) {
+      if (hookData.section !== "body") return;
+      const colIdx = hookData.column.index - 1; // offset by row number column
+      const cellText = String(hookData.cell.raw || "");
+      const lower = cellText.toLowerCase();
 
-    @media print {
-      body { padding: 0; }
-      .report-header { page-break-after: avoid; }
-      table { page-break-inside: auto; }
-      tr { page-break-inside: avoid; }
-      thead { display: table-header-group; }
-    }
-  </style>
-</head>
-<body>
-  <div class="report-header">
-    <div>
-      <div class="brand">WPL License Monitor</div>
-      <h1>${escapeHtml(data.title)}</h1>
-    </div>
-    <div class="meta">
-      <div><strong>Date:</strong> ${now}</div>
-      <div><strong>Records:</strong> ${data.rows.length}</div>
-    </div>
-  </div>
+      const isStatus = colIdx === statusIdx;
+      const isDaysLeft = colIdx === daysLeftIdx;
 
-  <div class="summary">
-    <span>Total: <span class="stat">${data.rows.length}</span> records</span>
-    ${buildSummaryStats(data)}
-  </div>
+      if (isStatus || isDaysLeft) {
+        if (lower === "expired") {
+          hookData.cell.styles.textColor = [220, 38, 38];
+          hookData.cell.styles.fontStyle = "bold";
+        } else if (lower === "missing") {
+          hookData.cell.styles.textColor = [30, 41, 59];
+          hookData.cell.styles.fontStyle = "bold";
+          hookData.cell.styles.fillColor = [254, 242, 242];
+        } else if (lower === "valid") {
+          hookData.cell.styles.textColor = [22, 163, 74];
+          hookData.cell.styles.fontStyle = "bold";
+        } else if (lower.includes("d left") || isDaysLeft) {
+          const days = parseInt(lower);
+          if (!isNaN(days)) {
+            if (days <= 30) {
+              hookData.cell.styles.textColor = [220, 38, 38];
+              hookData.cell.styles.fontStyle = "bold";
+            } else if (days <= 60) {
+              hookData.cell.styles.textColor = [234, 88, 12];
+              hookData.cell.styles.fontStyle = "bold";
+            } else if (days <= 90) {
+              hookData.cell.styles.textColor = [202, 138, 4];
+              hookData.cell.styles.fontStyle = "bold";
+            }
+          }
+        }
+      }
+    },
+    didDrawPage(hookData) {
+      const pageH = doc.internal.pageSize.getHeight();
+      doc.setDrawColor(226, 232, 240);
+      doc.line(14, pageH - 10, pageWidth - 14, pageH - 10);
+      doc.setFontSize(6.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text("WPL License Monitor — Confidential", 14, pageH - 6);
+      doc.text(
+        `Page ${hookData.pageNumber}`,
+        pageWidth - 14,
+        pageH - 6,
+        { align: "right" }
+      );
+    },
+  });
 
-  <table>
-    <thead><tr>${headerCells}</tr></thead>
-    <tbody>${bodyRows}</tbody>
-  </table>
-
-  <div class="report-footer">
-    <span>WPL License Monitor — Confidential</span>
-    <span>Generated ${now}</span>
-  </div>
-
-  <script>window.onload = function() { window.print(); }</script>
-</body>
-</html>`;
-
-  printWindow.document.write(html);
-  printWindow.document.close();
+  // Open in new tab
+  const pdfBlob = doc.output("blob");
+  const url = URL.createObjectURL(pdfBlob);
+  window.open(url, "_blank");
 }
 
 // --- Internal helpers ---
@@ -306,27 +242,24 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function getStatusClass(
-  cell: string,
-  colIdx: number,
-  headers: string[]
-): string {
-  const header = headers[colIdx]?.toLowerCase() || "";
-  if (header !== "status" && !header.includes("days left")) return "";
+function getSummaryStatsText(data: ExportData): string {
+  const statusIdx = data.headers.findIndex(
+    (h) => h.toLowerCase() === "status"
+  );
+  if (statusIdx === -1) return `Total: ${data.rows.length} records`;
 
-  const lower = cell.toLowerCase();
-  if (lower === "expired") return "status-expired";
-  if (lower === "missing") return "status-missing";
-  if (lower === "valid") return "status-valid";
-  if (lower.includes("d left")) {
-    const days = parseInt(lower);
-    if (!isNaN(days)) {
-      if (days <= 30) return "status-critical";
-      if (days <= 60) return "status-warning";
-      if (days <= 90) return "status-caution";
-    }
+  const counts: Record<string, number> = {};
+  for (const row of data.rows) {
+    const val = row[statusIdx] || "Unknown";
+    const key = val.includes("d left") ? "Expiring" : val;
+    counts[key] = (counts[key] || 0) + 1;
   }
-  return "";
+
+  const parts = [`Total: ${data.rows.length} records`];
+  for (const [label, count] of Object.entries(counts)) {
+    parts.push(`${label}: ${count}`);
+  }
+  return parts.join("   |   ");
 }
 
 function getStatusCellStyle(
@@ -355,23 +288,3 @@ function getStatusCellStyle(
   return "";
 }
 
-function buildSummaryStats(data: ExportData): string {
-  const statusIdx = data.headers.findIndex(
-    (h) => h.toLowerCase() === "status"
-  );
-  if (statusIdx === -1) return "";
-
-  const counts: Record<string, number> = {};
-  for (const row of data.rows) {
-    const val = row[statusIdx] || "Unknown";
-    const key = val.includes("d left") ? "Expiring" : val;
-    counts[key] = (counts[key] || 0) + 1;
-  }
-
-  return Object.entries(counts)
-    .map(
-      ([label, count]) =>
-        `<span>${label}: <span class="stat">${count}</span></span>`
-    )
-    .join("");
-}

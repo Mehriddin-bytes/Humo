@@ -22,7 +22,7 @@ import {
   ExternalLink,
   FileSpreadsheet,
   FileText,
-  Printer,
+  FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToCSV, exportToExcel, exportToPDF, type ExportData } from "@/lib/export";
@@ -60,8 +60,8 @@ export function StatsCards({
         await exportToExcel(data);
         toast.success("Excel downloaded");
       } else {
-        exportToPDF(data);
-        toast.success("Print dialog opened");
+        await exportToPDF(data);
+        toast.success("PDF opened in new tab");
       }
     } catch {
       toast.error("Export failed");
@@ -180,8 +180,8 @@ export function StatsCards({
                     CSV (.csv)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleExport(card.exportKey, "pdf")}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    PDF (Print)
+                    <FileDown className="mr-2 h-4 w-4" />
+                    PDF (.pdf)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
