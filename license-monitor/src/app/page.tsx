@@ -95,12 +95,6 @@ export default async function DashboardPage() {
     );
   });
 
-  const sortedExpiring = [...expiringLicenses].sort((a, b) => {
-    const cmp = a.licenseType.name.localeCompare(b.licenseType.name);
-    if (cmp !== 0) return cmp;
-    return getLicenseStatus(a.expiryDate).daysUntil - getLicenseStatus(b.expiryDate).daysUntil;
-  });
-
   const sortedLicenses = [...licenses].sort((a, b) => {
     const aName = `${a.worker.firstName} ${a.worker.lastName}`;
     const bName = `${b.worker.firstName} ${b.worker.lastName}`;
@@ -152,29 +146,40 @@ export default async function DashboardPage() {
         ];
       }),
     },
-    licensesNeeded: {
-      title: "Licenses Needed",
-      headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
-      rows: [
-        ...sortedMissing.map((m) => [
-          m.licenseTypeName,
-          `${m.worker.firstName} ${m.worker.lastName}`,
-          m.worker.position || "",
-          "Missing",
-          "",
-        ]),
-        ...sortedExpiring.map((l) => {
+    licensesNeeded: (() => {
+      // Group by license type, then list missing + expiring together within each type
+      const typeMap = new Map<string, { missing: typeof missingLicenses; expiring: typeof expiringLicenses }>();
+      for (const m of missingLicenses) {
+        if (!typeMap.has(m.licenseTypeName)) typeMap.set(m.licenseTypeName, { missing: [], expiring: [] });
+        typeMap.get(m.licenseTypeName)!.missing.push(m);
+      }
+      for (const l of expiringLicenses) {
+        if (!typeMap.has(l.licenseType.name)) typeMap.set(l.licenseType.name, { missing: [], expiring: [] });
+        typeMap.get(l.licenseType.name)!.expiring.push(l);
+      }
+      const rows: string[][] = [];
+      for (const typeName of Array.from(typeMap.keys()).sort((a, b) => a.localeCompare(b))) {
+        const group = typeMap.get(typeName)!;
+        const sortedM = [...group.missing].sort((a, b) =>
+          `${a.worker.firstName} ${a.worker.lastName}`.localeCompare(`${b.worker.firstName} ${b.worker.lastName}`)
+        );
+        const sortedE = [...group.expiring].sort((a, b) =>
+          getLicenseStatus(a.expiryDate).daysUntil - getLicenseStatus(b.expiryDate).daysUntil
+        );
+        for (const m of sortedM) {
+          rows.push([typeName, `${m.worker.firstName} ${m.worker.lastName}`, m.worker.position || "", "Missing", ""]);
+        }
+        for (const l of sortedE) {
           const { daysUntil } = getLicenseStatus(l.expiryDate);
-          return [
-            l.licenseType.name,
-            `${l.worker.firstName} ${l.worker.lastName}`,
-            l.worker.position || "",
-            "Expiring",
-            `${format(new Date(l.expiryDate), "MMM d, yyyy")} (${daysUntil}d left)`,
-          ];
-        }),
-      ],
-    },
+          rows.push([typeName, `${l.worker.firstName} ${l.worker.lastName}`, l.worker.position || "", "Expiring", `${format(new Date(l.expiryDate), "MMM d, yyyy")} (${daysUntil}d left)`]);
+        }
+      }
+      return {
+        title: "Licenses Needed",
+        headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
+        rows,
+      };
+    })(),
     noLicenses: {
       title: "No Licenses",
       headers: ["License Type", "Employee", "Position"],
