@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ExportButton } from "@/components/shared/export-button";
+import { ExcludeFilter, type FilterOption } from "@/components/shared/exclude-filter";
 import type { ExportData } from "@/lib/export";
 
 interface LicenseTypeRow {
@@ -52,12 +53,19 @@ interface LicenseTypesTableProps {
 export function LicenseTypesTable({ licenseTypes }: LicenseTypesTableProps) {
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<LicenseTypeRow | null>(null);
+  const [excludedTypes, setExcludedTypes] = useState<Set<string>>(new Set());
+
+  const typeOptions: FilterOption[] = licenseTypes
+    .map((lt) => ({ id: lt.id, label: lt.name }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const filtered = licenseTypes.filter((lt) => !excludedTypes.has(lt.id));
 
   function getExportData(): ExportData {
     return {
       title: "License Types",
       headers: ["License Type", "Description", "Total Licenses", "Workers", "Expired", "Expiring Soon", "Valid"],
-      rows: licenseTypes.map((lt) => [
+      rows: filtered.map((lt) => [
         lt.name,
         lt.description || "",
         String(lt.totalLicenses),
@@ -88,7 +96,13 @@ export function LicenseTypesTable({ licenseTypes }: LicenseTypesTableProps) {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between mb-4">
+        <ExcludeFilter
+          label="License Types"
+          options={typeOptions}
+          excluded={excludedTypes}
+          onChange={setExcludedTypes}
+        />
         <ExportButton data={getExportData()} />
       </div>
       <div className="rounded-md border">
@@ -106,7 +120,7 @@ export function LicenseTypesTable({ licenseTypes }: LicenseTypesTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {licenseTypes.map((lt) => (
+            {filtered.map((lt) => (
               <TableRow
                 key={lt.id}
                 className="hover:bg-accent/50 transition-colors"

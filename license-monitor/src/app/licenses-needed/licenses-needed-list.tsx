@@ -18,6 +18,7 @@ import { getLicenseStatus } from "@/lib/license-status";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { LicenseRowActions } from "@/components/shared/license-row-actions";
 import { ExportButton } from "@/components/shared/export-button";
+import { ExcludeFilter, type FilterOption } from "@/components/shared/exclude-filter";
 import type { ExportData } from "@/lib/export";
 
 interface WorkerInfo {
@@ -57,6 +58,37 @@ export function LicensesNeededList({
 }: LicensesNeededListProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<GroupBy>("licenseType");
+  const [excludedTypes, setExcludedTypes] = useState<Set<string>>(new Set());
+  const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
+
+  // Build exclude filter options
+  const typeOptions: FilterOption[] = (() => {
+    const map = new Map<string, string>();
+    for (const m of missingLicenses) map.set(m.licenseTypeId, m.licenseTypeName);
+    for (const e of expiringLicenses) map.set(e.licenseTypeId, e.licenseTypeName);
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  })();
+
+  const employeeOptions: FilterOption[] = (() => {
+    const map = new Map<string, string>();
+    for (const m of missingLicenses)
+      map.set(m.worker.id, `${m.worker.firstName} ${m.worker.lastName}`);
+    for (const e of expiringLicenses)
+      map.set(e.worker.id, `${e.worker.firstName} ${e.worker.lastName}`);
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  })();
+
+  // Apply exclude filters
+  const filteredMissing = missingLicenses.filter(
+    (m) => !excludedTypes.has(m.licenseTypeId) && !excludedEmployees.has(m.worker.id)
+  );
+  const filteredExpiring = expiringLicenses.filter(
+    (e) => !excludedTypes.has(e.licenseTypeId) && !excludedEmployees.has(e.worker.id)
+  );
 
   function toggleExpand(groupId: string) {
     setExpandedGroups((prev) => {
@@ -75,8 +107,17 @@ export function LicensesNeededList({
   function getExportData(): ExportData {
     const rows: string[][] = [];
     if (groupBy === "employee") {
+      // Export in same order as displayed: sorted employee groups, missing first then expiring by urgency
       for (const [, group] of employeeGroups) {
-        for (const entry of group.missing) {
+        const sortedMissing = [...group.missing].sort((a, b) =>
+          a.licenseTypeName.localeCompare(b.licenseTypeName)
+        );
+        const sortedExpiring = [...group.expiring].sort(
+          (a, b) =>
+            getLicenseStatus(new Date(a.expiryDate)).daysUntil -
+            getLicenseStatus(new Date(b.expiryDate)).daysUntil
+        );
+        for (const entry of sortedMissing) {
           rows.push([
             `${group.worker.firstName} ${group.worker.lastName}`,
             group.worker.position || "",
@@ -85,7 +126,7 @@ export function LicensesNeededList({
             "",
           ]);
         }
-        for (const license of group.expiring) {
+        for (const license of sortedExpiring) {
           const { daysUntil } = getLicenseStatus(new Date(license.expiryDate));
           rows.push([
             `${group.worker.firstName} ${group.worker.lastName}`,
@@ -102,24 +143,37 @@ export function LicensesNeededList({
         rows,
       };
     }
-    for (const entry of missingLicenses) {
-      rows.push([
-        entry.licenseTypeName,
-        `${entry.worker.firstName} ${entry.worker.lastName}`,
-        entry.worker.position || "",
-        "Missing",
-        "",
-      ]);
-    }
-    for (const license of expiringLicenses) {
-      const { daysUntil } = getLicenseStatus(new Date(license.expiryDate));
-      rows.push([
-        license.licenseTypeName,
-        `${license.worker.firstName} ${license.worker.lastName}`,
-        license.worker.position || "",
-        "Expiring",
-        `${format(new Date(license.expiryDate), "MMM d, yyyy")} (${daysUntil}d left)`,
-      ]);
+    // Export in same order as displayed: sorted type groups, missing (alphabetical) then expiring (by urgency)
+    for (const [, group] of sortedTypeGroups) {
+      const sortedMissing = [...group.missing].sort((a, b) =>
+        `${a.worker.firstName} ${a.worker.lastName}`.localeCompare(
+          `${b.worker.firstName} ${b.worker.lastName}`
+        )
+      );
+      const sortedExpiring = [...group.expiring].sort(
+        (a, b) =>
+          getLicenseStatus(new Date(a.expiryDate)).daysUntil -
+          getLicenseStatus(new Date(b.expiryDate)).daysUntil
+      );
+      for (const entry of sortedMissing) {
+        rows.push([
+          entry.licenseTypeName,
+          `${entry.worker.firstName} ${entry.worker.lastName}`,
+          entry.worker.position || "",
+          "Missing",
+          "",
+        ]);
+      }
+      for (const license of sortedExpiring) {
+        const { daysUntil } = getLicenseStatus(new Date(license.expiryDate));
+        rows.push([
+          license.licenseTypeName,
+          `${license.worker.firstName} ${license.worker.lastName}`,
+          license.worker.position || "",
+          "Expiring",
+          `${format(new Date(license.expiryDate), "MMM d, yyyy")} (${daysUntil}d left)`,
+        ]);
+      }
     }
     return {
       title: "Licenses Needed (By License Type)",
@@ -133,13 +187,13 @@ export function LicensesNeededList({
     string,
     { name: string; missing: MissingEntry[]; expiring: ExpiringEntry[] }
   >();
-  for (const entry of missingLicenses) {
+  for (const entry of filteredMissing) {
     const key = entry.licenseTypeId;
     if (!typeGroups.has(key))
       typeGroups.set(key, { name: entry.licenseTypeName, missing: [], expiring: [] });
     typeGroups.get(key)!.missing.push(entry);
   }
-  for (const license of expiringLicenses) {
+  for (const license of filteredExpiring) {
     const key = license.licenseTypeId;
     if (!typeGroups.has(key))
       typeGroups.set(key, { name: license.licenseTypeName, missing: [], expiring: [] });
@@ -156,13 +210,13 @@ export function LicensesNeededList({
     string,
     { worker: WorkerInfo; missing: MissingEntry[]; expiring: ExpiringEntry[] }
   >();
-  for (const entry of missingLicenses) {
+  for (const entry of filteredMissing) {
     const key = entry.worker.id;
     if (!workerGroups.has(key))
       workerGroups.set(key, { worker: entry.worker, missing: [], expiring: [] });
     workerGroups.get(key)!.missing.push(entry);
   }
-  for (const license of expiringLicenses) {
+  for (const license of filteredExpiring) {
     const key = license.worker.id;
     if (!workerGroups.has(key))
       workerGroups.set(key, { worker: license.worker, missing: [], expiring: [] });
@@ -174,29 +228,43 @@ export function LicensesNeededList({
     return bTotal - aTotal;
   });
 
-  const totalItems = missingLicenses.length + expiringLicenses.length;
+  const totalItems = filteredMissing.length + filteredExpiring.length;
   if (totalItems === 0) return null;
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1">
-          <Button
-            variant={groupBy === "licenseType" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleGroupByChange("licenseType")}
-          >
-            <Layers className="h-3.5 w-3.5 mr-1.5" />
-            By License Type
-          </Button>
-          <Button
-            variant={groupBy === "employee" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleGroupByChange("employee")}
-          >
-            <Users className="h-3.5 w-3.5 mr-1.5" />
-            By Employee
-          </Button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1">
+            <Button
+              variant={groupBy === "licenseType" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleGroupByChange("licenseType")}
+            >
+              <Layers className="h-3.5 w-3.5 mr-1.5" />
+              By License Type
+            </Button>
+            <Button
+              variant={groupBy === "employee" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleGroupByChange("employee")}
+            >
+              <Users className="h-3.5 w-3.5 mr-1.5" />
+              By Employee
+            </Button>
+          </div>
+          <ExcludeFilter
+            label="License Types"
+            options={typeOptions}
+            excluded={excludedTypes}
+            onChange={setExcludedTypes}
+          />
+          <ExcludeFilter
+            label="Employees"
+            options={employeeOptions}
+            excluded={excludedEmployees}
+            onChange={setExcludedEmployees}
+          />
         </div>
         <ExportButton data={getExportData()} />
       </div>

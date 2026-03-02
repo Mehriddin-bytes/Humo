@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/shared/export-button";
+import { ExcludeFilter, type FilterOption } from "@/components/shared/exclude-filter";
 import { getWorstStatus } from "@/lib/license-status";
 import type { ExportData } from "@/lib/export";
 import type { WorkerWithLicenses } from "@/types";
@@ -50,8 +51,24 @@ export function WorkersTable({ workers }: WorkersTableProps) {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [excludedPositions, setExcludedPositions] = useState<Set<string>>(new Set());
+
+  const positionOptions: FilterOption[] = (() => {
+    const positions = new Set<string>();
+    for (const w of workers) {
+      if (w.position) positions.add(w.position);
+    }
+    return Array.from(positions)
+      .sort((a, b) => a.localeCompare(b))
+      .map((p) => ({ id: p, label: p }));
+  })();
 
   const filtered = workers.filter((worker) => {
+    if (excludedPositions.size > 0) {
+      const pos = worker.position || "";
+      if (excludedPositions.has(pos)) return false;
+      if (!worker.position && excludedPositions.has("")) return false;
+    }
     const name = `${worker.firstName} ${worker.lastName}`.toLowerCase();
     const position = (worker.position || "").toLowerCase();
     const q = search.toLowerCase();
@@ -94,15 +111,25 @@ export function WorkersTable({ workers }: WorkersTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search employees..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search employees..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {positionOptions.length > 0 && (
+            <ExcludeFilter
+              label="Positions"
+              options={positionOptions}
+              excluded={excludedPositions}
+              onChange={setExcludedPositions}
+            />
+          )}
         </div>
         <ExportButton data={getExportData()} />
       </div>

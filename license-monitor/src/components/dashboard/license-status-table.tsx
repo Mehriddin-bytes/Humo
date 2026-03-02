@@ -53,6 +53,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
 import { getLicenseStatus } from "@/lib/license-status";
+import { ExcludeFilter, type FilterOption } from "@/components/shared/exclude-filter";
 import type { LicenseWithWorker, MissingLicenseEntry } from "@/types";
 
 type GroupMode = "license" | "employee";
@@ -95,6 +96,31 @@ export function LicenseStatusTable({
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [excludedTypes, setExcludedTypes] = useState<Set<string>>(new Set());
+  const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
+
+  // Build exclude filter options
+  const typeFilterOptions: FilterOption[] = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const l of licenses) map.set(l.licenseType.id, l.licenseType.name);
+    for (const m of missingLicenses) map.set(m.licenseTypeId, m.licenseTypeName);
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [licenses, missingLicenses]);
+
+  const employeeFilterOptions: FilterOption[] = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const w of workers)
+      map.set(w.id, `${w.firstName} ${w.lastName}`);
+    for (const l of licenses)
+      map.set(l.workerId, `${l.worker.firstName} ${l.worker.lastName}`);
+    for (const m of missingLicenses)
+      map.set(m.worker.id, `${m.worker.firstName} ${m.worker.lastName}`);
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [licenses, missingLicenses, workers]);
 
   // Get unique license types for the filter dropdown
   const licenseTypeMap = new Map<string, string>();
@@ -112,6 +138,8 @@ export function LicenseStatusTable({
   const filtered = licenses
     .filter((license) => {
       if (statusFilter === "not_assigned") return false;
+      if (excludedTypes.has(license.licenseType.id)) return false;
+      if (excludedEmployees.has(license.workerId)) return false;
       const workerName =
         `${license.worker.firstName} ${license.worker.lastName}`.toLowerCase();
       const typeName = license.licenseType.name.toLowerCase();
@@ -142,6 +170,8 @@ export function LicenseStatusTable({
   const filteredMissing = missingLicenses.filter((entry) => {
     if (statusFilter !== "all" && statusFilter !== "not_assigned") return false;
     if (typeFilter !== "all" && entry.licenseTypeId !== typeFilter) return false;
+    if (excludedTypes.has(entry.licenseTypeId)) return false;
+    if (excludedEmployees.has(entry.worker.id)) return false;
     const workerName =
       `${entry.worker.firstName} ${entry.worker.lastName}`.toLowerCase();
     const typeName = entry.licenseTypeName.toLowerCase();
@@ -278,6 +308,7 @@ export function LicenseStatusTable({
 
     // Initialize all workers (so employees with no data still show if they match search)
     for (const w of workers) {
+      if (excludedEmployees.has(w.id)) continue;
       const workerName = `${w.firstName} ${w.lastName}`.toLowerCase();
       if (q && !workerName.includes(q)) continue;
       grouped.set(w.id, { worker: w, licenses: [], missing: [] });
@@ -321,7 +352,7 @@ export function LicenseStatusTable({
       const bName = `${b[1].worker.firstName} ${b[1].worker.lastName}`;
       return aName.localeCompare(bName);
     });
-  }, [filtered, filteredMissing, workers, q, statusFilter]);
+  }, [filtered, filteredMissing, workers, q, statusFilter, excludedEmployees]);
 
   function getEmployeeSortScore(
     workerLicenses: LicenseWithWorker[],
@@ -378,6 +409,23 @@ export function LicenseStatusTable({
             <SelectItem value="valid">Valid</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Exclude filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-muted-foreground font-medium">Exclude:</span>
+        <ExcludeFilter
+          label="License Types"
+          options={typeFilterOptions}
+          excluded={excludedTypes}
+          onChange={setExcludedTypes}
+        />
+        <ExcludeFilter
+          label="Employees"
+          options={employeeFilterOptions}
+          excluded={excludedEmployees}
+          onChange={setExcludedEmployees}
+        />
       </div>
 
       {/* Group mode toggle */}

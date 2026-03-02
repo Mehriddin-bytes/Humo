@@ -86,6 +86,45 @@ export default async function DashboardPage() {
     }
   }
 
+  // Sort helpers for export ordering
+  const sortedMissing = [...missingLicenses].sort((a, b) => {
+    const cmp = a.licenseTypeName.localeCompare(b.licenseTypeName);
+    if (cmp !== 0) return cmp;
+    return `${a.worker.firstName} ${a.worker.lastName}`.localeCompare(
+      `${b.worker.firstName} ${b.worker.lastName}`
+    );
+  });
+
+  const sortedExpiring = [...expiringLicenses].sort((a, b) => {
+    const cmp = a.licenseType.name.localeCompare(b.licenseType.name);
+    if (cmp !== 0) return cmp;
+    return getLicenseStatus(a.expiryDate).daysUntil - getLicenseStatus(b.expiryDate).daysUntil;
+  });
+
+  const sortedLicenses = [...licenses].sort((a, b) => {
+    const aName = `${a.worker.firstName} ${a.worker.lastName}`;
+    const bName = `${b.worker.firstName} ${b.worker.lastName}`;
+    const cmp = aName.localeCompare(bName);
+    if (cmp !== 0) return cmp;
+    return a.licenseType.name.localeCompare(b.licenseType.name);
+  });
+
+  const sortedExpired = [...expiredLicenses].sort((a, b) => {
+    const aName = `${a.worker.firstName} ${a.worker.lastName}`;
+    const bName = `${b.worker.firstName} ${b.worker.lastName}`;
+    const cmp = aName.localeCompare(bName);
+    if (cmp !== 0) return cmp;
+    return a.licenseType.name.localeCompare(b.licenseType.name);
+  });
+
+  const sortedExpiringByEmployee = [...expiringLicenses].sort((a, b) => {
+    const aName = `${a.worker.firstName} ${a.worker.lastName}`;
+    const bName = `${b.worker.firstName} ${b.worker.lastName}`;
+    const cmp = aName.localeCompare(bName);
+    if (cmp !== 0) return cmp;
+    return getLicenseStatus(a.expiryDate).daysUntil - getLicenseStatus(b.expiryDate).daysUntil;
+  });
+
   // Build export data for each card
   const exports: Record<string, ExportData> = {
     employees: {
@@ -101,7 +140,7 @@ export default async function DashboardPage() {
     licenses: {
       title: "All Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
-      rows: licenses.map((l) => {
+      rows: sortedLicenses.map((l) => {
         const { label } = getLicenseStatus(l.expiryDate);
         return [
           `${l.worker.firstName} ${l.worker.lastName}`,
@@ -117,14 +156,14 @@ export default async function DashboardPage() {
       title: "Licenses Needed",
       headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
       rows: [
-        ...missingLicenses.map((m) => [
+        ...sortedMissing.map((m) => [
           m.licenseTypeName,
           `${m.worker.firstName} ${m.worker.lastName}`,
           m.worker.position || "",
           "Missing",
           "",
         ]),
-        ...expiringLicenses.map((l) => {
+        ...sortedExpiring.map((l) => {
           const { daysUntil } = getLicenseStatus(l.expiryDate);
           return [
             l.licenseType.name,
@@ -139,7 +178,7 @@ export default async function DashboardPage() {
     noLicenses: {
       title: "No Licenses",
       headers: ["License Type", "Employee", "Position"],
-      rows: missingLicenses.map((m) => [
+      rows: sortedMissing.map((m) => [
         m.licenseTypeName,
         `${m.worker.firstName} ${m.worker.lastName}`,
         m.worker.position || "",
@@ -148,7 +187,7 @@ export default async function DashboardPage() {
     expiring: {
       title: "Expiring Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Days Left", "Status"],
-      rows: expiringLicenses.map((l) => {
+      rows: sortedExpiringByEmployee.map((l) => {
         const { daysUntil, label } = getLicenseStatus(l.expiryDate);
         return [
           `${l.worker.firstName} ${l.worker.lastName}`,
@@ -164,7 +203,7 @@ export default async function DashboardPage() {
     expired: {
       title: "Expired Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
-      rows: expiredLicenses.map((l) => {
+      rows: sortedExpired.map((l) => {
         const { label } = getLicenseStatus(l.expiryDate);
         return [
           `${l.worker.firstName} ${l.worker.lastName}`,
