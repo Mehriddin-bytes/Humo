@@ -134,6 +134,7 @@ export default async function DashboardPage() {
     licenses: {
       title: "All Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
+      groupColumn: 0,
       rows: sortedLicenses.map((l) => {
         const { label } = getLicenseStatus(l.expiryDate);
         return [
@@ -178,11 +179,13 @@ export default async function DashboardPage() {
         title: "Licenses Needed",
         headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
         rows,
+        groupColumn: 0,
       };
     })(),
     noLicenses: {
       title: "No Licenses",
       headers: ["License Type", "Employee", "Position"],
+      groupColumn: 0,
       rows: sortedMissing.map((m) => [
         m.licenseTypeName,
         `${m.worker.firstName} ${m.worker.lastName}`,
@@ -192,6 +195,7 @@ export default async function DashboardPage() {
     expiring: {
       title: "Expiring Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Days Left", "Status"],
+      groupColumn: 0,
       rows: sortedExpiringByEmployee.map((l) => {
         const { daysUntil, label } = getLicenseStatus(l.expiryDate);
         return [
@@ -208,6 +212,7 @@ export default async function DashboardPage() {
     expired: {
       title: "Expired Licenses",
       headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
+      groupColumn: 0,
       rows: sortedExpired.map((l) => {
         const { label } = getLicenseStatus(l.expiryDate);
         return [

@@ -47,10 +47,20 @@ export default async function ExpiredPage() {
     worker: l.worker,
   }));
 
+  // Sort by employee name for grouped export
+  const sortedForExport = [...expired].sort((a, b) => {
+    const aName = `${a.worker.firstName} ${a.worker.lastName}`;
+    const bName = `${b.worker.firstName} ${b.worker.lastName}`;
+    const cmp = aName.localeCompare(bName);
+    if (cmp !== 0) return cmp;
+    return a.licenseType.name.localeCompare(b.licenseType.name);
+  });
+
   const exportData = {
     title: "Expired Licenses",
     headers: ["Employee", "License Type", "Code", "Issue Date", "Expiry Date", "Status"],
-    rows: expired.map((license) => {
+    groupColumn: 0,
+    rows: sortedForExport.map((license) => {
       const { label } = getLicenseStatus(license.expiryDate);
       return [
         `${license.worker.firstName} ${license.worker.lastName}`,

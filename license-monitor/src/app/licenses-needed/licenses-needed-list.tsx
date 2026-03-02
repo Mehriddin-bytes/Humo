@@ -141,6 +141,7 @@ export function LicensesNeededList({
         title: "Licenses Needed (By Employee)",
         headers: ["Employee", "Position", "License Type", "Status", "Expiry Date"],
         rows,
+        groupColumn: 0,
       };
     }
     // Export in same order as displayed: sorted type groups, missing (alphabetical) then expiring (by urgency)
@@ -179,6 +180,7 @@ export function LicensesNeededList({
       title: "Licenses Needed (By License Type)",
       headers: ["License Type", "Employee", "Position", "Status", "Expiry Date"],
       rows,
+      groupColumn: 0,
     };
   }
 

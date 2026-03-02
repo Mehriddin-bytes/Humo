@@ -2,6 +2,10 @@ export interface ExportData {
   title: string;
   headers: string[];
   rows: string[][];
+  /** Column index (0-based) used to detect group boundaries.
+   *  When the value in this column changes between rows, a visual
+   *  separator (thick border + spacing) is rendered in exports. */
+  groupColumn?: number;
 }
 
 export function exportToCSV(data: ExportData): void {
@@ -12,10 +16,12 @@ export function exportToCSV(data: ExportData): void {
     return cell;
   };
 
+  const boundaries = getGroupBoundaries(data);
   const lines: string[] = [];
   lines.push(data.headers.map(escapeCell).join(","));
-  for (const row of data.rows) {
-    lines.push(row.map(escapeCell).join(","));
+  for (let i = 0; i < data.rows.length; i++) {
+    if (boundaries.has(i)) lines.push(""); // blank row between groups
+    lines.push(data.rows[i].map(escapeCell).join(","));
   }
 
   const csvContent = lines.join("\n");
@@ -40,13 +46,21 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     )
     .join("");
 
+  const boundaries = getGroupBoundaries(data);
   const bodyRows = data.rows
     .map((row, rowIdx) => {
       const bg = rowIdx % 2 === 0 ? "#ffffff" : "#f8fafc";
+      const isGroupStart = boundaries.has(rowIdx);
+      const borderTop = isGroupStart
+        ? "border-top:3px solid #1f2937;"
+        : "border-top:1px solid #e2e8f0;";
+      const marginTop = isGroupStart
+        ? "mso-row-margin-top:4pt;"
+        : "";
       const cells = row
         .map((cell, colIdx) => {
           const statusColor = getStatusCellStyle(cell, colIdx, data.headers);
-          return `<td style="background-color:${bg}; padding:6px 14px; border:1px solid #e2e8f0; font-size:10pt; ${statusColor}">${escapeHtml(cell || "—")}</td>`;
+          return `<td style="background-color:${bg}; padding:6px 14px; ${borderTop} border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-size:10pt; ${marginTop} ${statusColor}">${escapeHtml(cell || "—")}</td>`;
         })
         .join("");
       return `<tr>${cells}</tr>`;
@@ -134,6 +148,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
   // --- Status column index ---
   const statusIdx = data.headers.findIndex((h) => h.toLowerCase() === "status");
   const daysLeftIdx = data.headers.findIndex((h) => h.toLowerCase().includes("days left"));
+  const pdfBoundaries = getGroupBoundaries(data);
 
   // --- Table ---
   autoTable(doc, {
@@ -164,6 +179,13 @@ export async function exportToPDF(data: ExportData): Promise<void> {
     },
     didParseCell(hookData) {
       if (hookData.section !== "body") return;
+      const rowIdx = hookData.row.index;
+
+      // Group boundary: extra top padding to create visual gap
+      if (pdfBoundaries.has(rowIdx)) {
+        hookData.cell.styles.cellPadding = { top: 4.5, right: 2.5, bottom: 2.5, left: 2.5 };
+      }
+
       const colIdx = hookData.column.index - 1; // offset by row number column
       const cellText = String(hookData.cell.raw || "");
       const lower = cellText.toLowerCase();
@@ -199,6 +221,18 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         }
       }
     },
+    didDrawCell(hookData) {
+      if (hookData.section !== "body") return;
+      if (pdfBoundaries.has(hookData.row.index)) {
+        const { x, y, width } = hookData.cell;
+        doc.setDrawColor(31, 41, 55);
+        doc.setLineWidth(0.5);
+        doc.line(x, y, x + width, y);
+        // Reset to default
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.2);
+      }
+    },
     didDrawPage(hookData) {
       const pageH = doc.internal.pageSize.getHeight();
       doc.setDrawColor(226, 232, 240);
@@ -222,6 +256,19 @@ export async function exportToPDF(data: ExportData): Promise<void> {
 }
 
 // --- Internal helpers ---
+
+/** Returns a Set of row indices where a new group starts (based on groupColumn). */
+function getGroupBoundaries(data: ExportData): Set<number> {
+  const boundaries = new Set<number>();
+  if (data.groupColumn == null || data.rows.length === 0) return boundaries;
+  const col = data.groupColumn;
+  for (let i = 1; i < data.rows.length; i++) {
+    if (data.rows[i][col] !== data.rows[i - 1][col]) {
+      boundaries.add(i);
+    }
+  }
+  return boundaries;
+}
 
 function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
